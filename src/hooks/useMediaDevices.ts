@@ -194,7 +194,6 @@ const useMediaDevices = (options: UseMediaDevicesOptions = {}): UseMediaDevicesR
       
       // Update selected devices if not already set
       const audioInputs = formattedDevices.filter(d => d.kind === 'audioinput');
-      const videoInputs = formattedDevices.filter(d => d.kind === 'videoinput');
       const audioOutputs = formattedDevices.filter(d => d.kind === 'audiooutput');
       
       // Always keep cameraId as null by default, regardless of includeCamera

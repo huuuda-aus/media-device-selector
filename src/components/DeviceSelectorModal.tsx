@@ -107,10 +107,6 @@ const DeviceSelectorModal: React.FC<DeviceSelectorModalProps> = ({
     handleClose();
   };
   
-  const handleModalClose = () => {
-    handleClose();
-  };
-
   const renderDeviceList = (devices: Array<{ deviceId: string; label: string; kind: MediaDeviceKind; isSelected?: boolean }>, kind: MediaDeviceKind) => {
     if (isLoading) return <div className={styles.loading}>Loading devices...</div>;
     if (error) return <div className={styles.error}>Error loading devices: {error.message}</div>;
