@@ -1,10 +1,15 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import type { Device, MediaDeviceKind, PermissionStatus, SelectedDevices, DeviceLists } from '../types';
 
+interface UseMediaDevicesOptions {
+  includeCamera?: boolean;
+}
+
 interface UseMediaDevicesReturn {
   devices: Device[];
   deviceLists: DeviceLists;
   selectedDevices: SelectedDevices;
+  setSelectedDevices: React.Dispatch<React.SetStateAction<SelectedDevices>>;
   selectDevice: (kind: MediaDeviceKind, deviceId: string) => Promise<void>;
   activeStream: MediaStream | null;
   permissionStatus: PermissionStatus;
@@ -13,12 +18,13 @@ interface UseMediaDevicesReturn {
   isMediaDevicesSupported: boolean;
 }
 
-const useMediaDevices = (): UseMediaDevicesReturn => {
+const useMediaDevices = (options: UseMediaDevicesOptions = {}): UseMediaDevicesReturn => {
+  const { includeCamera = true } = options;
   const [permissionStatus, setPermissionStatus] = useState<PermissionStatus>('prompt');
   const [devices, setDevices] = useState<Device[]>([]);
   const [selectedDevices, setSelectedDevices] = useState<SelectedDevices>({
     microphoneId: null,
-    cameraId: null,
+    cameraId: null, // Always start with no camera selected
     speakerId: null,
   });
   
@@ -48,11 +54,8 @@ const useMediaDevices = (): UseMediaDevicesReturn => {
   // Update device selection
   const selectDevice = useCallback(
     async (kind: MediaDeviceKind, deviceId: string) => {
-      console.log(`Selecting ${kind} device:`, deviceId);
-      
       if (!isMediaDevicesSupported) {
         const error = new Error('MediaDevices API is not supported in this browser');
-        console.error(error);
         setError(error);
         return;
       }
@@ -100,13 +103,11 @@ const useMediaDevices = (): UseMediaDevicesReturn => {
             setActiveStream(stream);
           } catch (err) {
             if (isMounted.current) {
-              console.error(`Error accessing ${kind}:`, err);
               setError(err instanceof Error ? err : new Error(`Failed to access ${kind}`));
             }
           }
         }
       } catch (err) {
-        console.error(`Error selecting ${kind}:`, err);
         setError(err instanceof Error ? err : new Error('Failed to select device'));
       }
     },
@@ -115,55 +116,42 @@ const useMediaDevices = (): UseMediaDevicesReturn => {
 
   // Request permissions and enumerate devices
   const enumerateDevices = useCallback(async () => {
-    console.log('Starting device enumeration...');
-    
     if (!isMediaDevicesSupported) {
-      console.log('MediaDevices API is not supported');
       setPermissionStatus('not-supported');
       setIsLoading(false);
       return;
     }
 
-    console.log('Starting device enumeration...');
     setIsLoading(true);
     setError(null);
 
     try {
-      console.log('Requesting media permissions...');
-      // First, request permissions by getting a media stream
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
+      // Only request camera permissions if includeCamera is true
+      const constraints = {
+        audio: true,
+        video: includeCamera
+      };
       
+      // Request permissions by getting a media stream
+      const stream = await navigator.mediaDevices.getUserMedia(constraints);
+
       // Stop all tracks to release the camera/mic
       stream.getTracks().forEach(track => track.stop());
       
-      console.log('Enumerating devices...');
       const mediaDevices = await navigator.mediaDevices.enumerateDevices();
       
       // Check mounted state after async operations
       if (!isMounted.current) {
-        console.log('Component unmounted before device processing');
         return;
       }
-
-      // Debug: Log the raw device data in detail
-      console.group('Raw Device Data from enumerateDevices()');
-      console.log('Total devices found:', mediaDevices.length);
-      mediaDevices.forEach((device, index) => {
-        console.group(`Device ${index + 1}:`);
-        console.log('Kind:', device.kind);
-        console.log('Device ID:', device.deviceId);
-        console.log('Label:', device.label);
-        console.log('Group ID:', device.groupId);
-        console.groupEnd();
-      });
-      console.groupEnd();
-      
-      console.log('Device kinds found:', [...new Set(mediaDevices.map(d => d.kind))]);
       
       const formattedDevices = mediaDevices
         .filter(device => {
           if (!device.deviceId) {
-            console.log('Skipping device with no ID:', device);
+            return false;
+          }
+          // Skip camera devices if includeCamera is false
+          if (!includeCamera && device.kind.toLowerCase().includes('video')) {
             return false;
           }
           return true;
@@ -177,7 +165,6 @@ const useMediaDevices = (): UseMediaDevicesReturn => {
           } else if (deviceKind.includes('audio')) {
             kind = deviceKind.includes('out') ? 'audiooutput' : 'audioinput';
           } else {
-            console.warn(`Unknown device kind: ${device.kind}, defaulting to audioinput`);
             kind = 'audioinput';
           }
           
@@ -199,59 +186,29 @@ const useMediaDevices = (): UseMediaDevicesReturn => {
           };
         });
 
-      // Debug: Log the formatted devices in detail
-      console.group('Formatted Devices');
-      console.log('Total formatted devices:', formattedDevices.length);
-      formattedDevices.forEach((device, index) => {
-        console.group(`Device ${index + 1} (${device.kind}):`);
-        console.log('Device ID:', device.deviceId);
-        console.log('Label:', device.label);
-        console.log('Group ID:', device.groupId);
-        console.log('Is Selected:', device.isSelected);
-        console.groupEnd();
-      });
-      console.groupEnd();
-      
-      // Final mounted check before state updates
       if (!isMounted.current) {
-        console.log('Component unmounted before updating state');
         return;
       }
       
-      // Update devices state
-      console.log('Updating devices state with', formattedDevices.length, 'devices');
       setDevices(formattedDevices);
       
       // Update selected devices if not already set
       const audioInputs = formattedDevices.filter(d => d.kind === 'audioinput');
-      const videoInputs = formattedDevices.filter(d => d.kind === 'videoinput');
       const audioOutputs = formattedDevices.filter(d => d.kind === 'audiooutput');
       
-      console.log('Updating selected devices:', {
-        audioInputs: audioInputs.length,
-        videoInputs: videoInputs.length,
-        audioOutputs: audioOutputs.length
-      });
-      
-      setSelectedDevices(prev => {
-        const update = {
-          microphoneId: prev.microphoneId || (audioInputs[0]?.deviceId || null),
-          cameraId: prev.cameraId || (videoInputs[0]?.deviceId || null),
-          speakerId: prev.speakerId || (audioOutputs[0]?.deviceId || null),
-        };
-        console.log('Selected devices update:', update);
-        return update;
-      });
+      // Always keep cameraId as null by default, regardless of includeCamera
+      setSelectedDevices(prev => ({
+        microphoneId: prev.microphoneId || (audioInputs[0]?.deviceId || null),
+        speakerId: prev.speakerId || (audioOutputs[0]?.deviceId || null),
+        cameraId: null // Always default to no camera selected
+      }));
       
       setPermissionStatus('granted');
-      console.log('Device enumeration completed successfully');
-      console.log('5b. Finished processing devices, loading complete');
     } catch (err) {
       if (isMounted.current) {
         if (err instanceof DOMException && err.name === 'NotAllowedError') {
           setPermissionStatus('denied');
         } else {
-          console.error('Error accessing media devices:', err);
           setError(err instanceof Error ? err : new Error('Failed to access media devices'));
         }
       }
@@ -260,11 +217,21 @@ const useMediaDevices = (): UseMediaDevicesReturn => {
         setIsLoading(false);
       }
     }
-  }, [isMediaDevicesSupported]);
+  }, [isMediaDevicesSupported, includeCamera]);
 
   // Use a ref to track the initialization state
   const initRef = useRef<boolean>(false);
   const deviceChangeHandler = useRef<(() => void) | null>(null);
+
+  // Set initial camera selection based on includeCamera
+  useEffect(() => {
+    if (!includeCamera) {
+      setSelectedDevices(prev => ({
+        ...prev,
+        cameraId: null
+      }));
+    }
+  }, [includeCamera]);
 
   // Set up device change listener and initial enumeration
   useEffect(() => {
@@ -366,7 +333,7 @@ const useMediaDevices = (): UseMediaDevicesReturn => {
       // with async operations that are still in progress
       initRef.current = false;
     };
-  }, [isMediaDevicesSupported]);  // Only depends on isMediaDevicesSupported
+  }, [isMediaDevicesSupported, includeCamera]);  // Only depends on isMediaDevicesSupported
 
   // Organize devices by kind - only run after initial load
   const [hasInitialDevices, setHasInitialDevices] = useState(false);
@@ -484,6 +451,7 @@ const useMediaDevices = (): UseMediaDevicesReturn => {
     devices,
     deviceLists: exposedDeviceLists,
     selectedDevices,
+    setSelectedDevices,
     selectDevice,
     activeStream,
     permissionStatus,
@@ -493,4 +461,8 @@ const useMediaDevices = (): UseMediaDevicesReturn => {
   };
 };
 
+// Export as default for backward compatibility
 export default useMediaDevices;
+
+// Export the type for better TypeScript support
+export type { UseMediaDevicesOptions, UseMediaDevicesReturn };

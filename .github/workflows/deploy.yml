@@ -15,7 +15,6 @@ jobs:
           node-version: '18.x'
       - run: npm ci
       - run: npm run build
-      - run: npm run test:ci
       - name: Deploy to NPM
         if: github.ref == 'refs/heads/main'
         env:

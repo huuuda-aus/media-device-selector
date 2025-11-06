@@ -2,6 +2,8 @@ import React from 'react';
 import { createRoot } from 'react-dom/client';
 import DeviceSelectorModal from '../src/components/DeviceSelectorModal';
 
+const INCLUDE_CAMERA = false;
+
 function Demo() {
   const [isOpen, setIsOpen] = React.useState(false);
   const videoRef = React.useRef<HTMLVideoElement>(null);
@@ -29,7 +31,7 @@ function Demo() {
           marginBottom: '20px'
         }}
       >
-        Select Devices
+        Select Audio Devices
       </button>
 
       <DeviceSelectorModal
@@ -38,21 +40,24 @@ function Demo() {
         onSelectionComplete={handleSelectionComplete}
         targetMediaRef={videoRef}
         showCameraPreview={true}
+        includeCamera={INCLUDE_CAMERA}
       />
 
-      <div style={{ marginTop: '20px' }}>
-        <h2>Camera Preview:</h2>
-        <video 
-          ref={videoRef} 
-          autoPlay 
-          playsInline 
-          style={{
-            maxWidth: '100%',
-            border: '1px solid #ccc',
-            borderRadius: '4px'
-          }}
-        />
-      </div>
+      {INCLUDE_CAMERA && (
+        <div style={{ marginTop: '20px' }}>
+          <h2>Camera Preview:</h2>
+          <video 
+            ref={videoRef} 
+            autoPlay 
+            playsInline 
+            style={{
+              maxWidth: '100%',
+              border: '1px solid #ccc',
+              borderRadius: '4px'
+            }}
+          />
+        </div>
+      )}
     </div>
   );
 }
