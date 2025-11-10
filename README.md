@@ -5,6 +5,10 @@
 
 A lightweight, customizable React component for managing media devices (camera, microphone, and speakers) with a clean, accessible UI. Built with TypeScript and fully typed for a great developer experience.
 
+## 🌟 Client-Side Only
+
+> **Important**: This is a client-side only component that requires browser APIs. It will throw an error if used in a server-side rendering (SSR) environment. See [Server-Side Rendering](#server-side-rendering) for usage in frameworks like Next.js.
+
 ## ✨ Features
 
 - 🎥 List and select cameras, microphones, and speakers
@@ -15,6 +19,8 @@ A lightweight, customizable React component for managing media devices (camera, 
 - 🔄 Automatic device refresh when hardware changes
 - 🎯 TypeScript support with full type definitions
 - 🚫 Zero external UI dependencies
+- 🛡️ Type-safe with comprehensive error handling
+- 🌍 Environment detection and graceful degradation
 
 ## 📦 Installation
 
@@ -185,6 +191,87 @@ function CustomDeviceSelector() {
       {/* Add similar selects for audio devices */}
     </div>
   );
+}
+```
+
+## 🖥️ Server-Side Rendering
+
+This component is designed to work only in the browser. When using with server-side rendering frameworks like Next.js, you'll need to:
+
+### Next.js App Router
+
+```tsx
+'use client';
+
+import dynamic from 'next/dynamic';
+import { Suspense } from 'react';
+
+const DeviceSelectorModal = dynamic(
+  () => import('react-media-device-selector').then(mod => mod.DeviceSelectorModal),
+  { 
+    ssr: false,
+    loading: () => <div>Loading device selector...</div>
+  }
+);
+
+export default function Page() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <DeviceSelectorModal 
+        isOpen={true}
+        onClose={() => {}}
+        onSelectionComplete={console.log}
+      />
+    </Suspense>
+  );
+}
+```
+
+### Next.js Pages Router
+
+```tsx
+import dynamic from 'next/dynamic';
+
+const DeviceSelectorModal = dynamic(
+  () => import('react-media-device-selector').then(mod => mod.DeviceSelectorModal),
+  { ssr: false }
+);
+
+function HomePage() {
+  return (
+    <div>
+      <h1>Device Selector Demo</h1>
+      <DeviceSelectorModal 
+        isOpen={true}
+        onClose={() => {}}
+        onSelectionComplete={console.log}
+      />
+    </div>
+  );
+}
+
+export default HomePage;
+```
+
+### Error Handling
+
+For better error handling, you can use the `checkEnvironmentSupport` utility:
+
+```tsx
+import { checkEnvironmentSupport } from 'react-media-device-selector';
+
+function DeviceSelectorWrapper() {
+  const env = checkEnvironmentSupport();
+  
+  if (!env.isBrowser) {
+    return <div>This component only works in the browser</div>;
+  }
+  
+  if (env.error) {
+    return <div>Media devices not supported: {env.error.message}</div>;
+  }
+  
+  return <DeviceSelectorModal /* props */ />;
 }
 ```
 
