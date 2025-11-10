@@ -1,73 +1,201 @@
-# React + TypeScript + Vite
+# React Media Device Selector
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+[![npm version](https://badge.fury.io/js/react-media-device-selector.svg)](https://badge.fury.io/js/react-media-device-selector)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-Currently, two official plugins are available:
+A lightweight, customizable React component for managing media devices (camera, microphone, and speakers) with a clean, accessible UI. Built with TypeScript and fully typed for a great developer experience.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## ✨ Features
 
-## React Compiler
+- 🎥 List and select cameras, microphones, and speakers
+- 🎨 Customizable modal interface
+- 🎣 Standalone `useMediaDevices` hook for custom UIs
+- 📱 Responsive design that works on all devices
+- 🔍 Real-time device permission handling
+- 🔄 Automatic device refresh when hardware changes
+- 🎯 TypeScript support with full type definitions
+- 🚫 Zero external UI dependencies
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## 📦 Installation
 
-## Expanding the ESLint configuration
+```bash
+# Using npm
+npm install react-media-device-selector
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+# Using yarn
+yarn add react-media-device-selector
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+# Using pnpm
+pnpm add react-media-device-selector
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## 🚀 Basic Usage
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+```tsx
+import { DeviceSelectorModal, useMediaDevices } from 'react-media-device-selector';
+import { useState, useRef } from 'react';
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+function App() {
+  const [isOpen, setIsOpen] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  
+  const { devices, selectedDevices, updateSelectedDevices } = useMediaDevices();
+
+  const handleSelectionComplete = (selected: { 
+    videoInput?: string | null; 
+    audioInput?: string | null; 
+    audioOutput?: string | null; 
+  }) => {
+    console.log('Selected devices:', selected);
+    
+    // Example: Start video stream with selected camera
+    if (videoRef.current && selected.videoInput) {
+      navigator.mediaDevices
+        .getUserMedia({ 
+          video: { deviceId: selected.videoInput } 
+        })
+        .then(stream => {
+          if (videoRef.current) {
+            videoRef.current.srcObject = stream;
+          }
+        });
+    }
+  };
+
+  return (
+    <div>
+      <button onClick={() => setIsOpen(true)}>
+        Select Devices
+      </button>
+      
+      <DeviceSelectorModal
+        isOpen={isOpen}
+        onClose={() => setIsOpen(false)}
+        onSelectionComplete={handleSelectionComplete}
+        targetMediaRef={videoRef}
+        showCameraPreview={true}
+      />
+      
+      <video 
+        ref={videoRef} 
+        autoPlay 
+        playsInline 
+        style={{ width: '100%', maxWidth: '640px' }}
+      />
+    </div>
+  );
+}
 ```
+
+## 🔧 API Reference
+
+### `DeviceSelectorModal` Props
+
+| Prop | Type | Required | Default | Description |
+|------|------|----------|---------|-------------|
+| `isOpen` | `boolean` | ✅ | - | Controls the visibility of the modal |
+| `onClose` | `() => void` | ✅ | - | Callback when the modal is closed |
+| `onSelectionComplete` | `(devices: SelectedDevices) => void` | ✅ | - | Callback when device selection is confirmed |
+| `targetMediaRef` | `React.RefObject<HTMLVideoElement>` | ❌ | - | Reference to video element for camera preview |
+| `showCameraPreview` | `boolean` | ❌ | `true` | Show/hide camera preview section |
+| `includeCamera` | `boolean` | ❌ | `true` | Include camera selection |
+| `includeMicrophone` | `boolean` | ❌ | `true` | Include microphone selection |
+| `includeSpeaker` | `boolean` | ❌ | `true` | Include speaker selection |
+| `title` | `string` | ❌ | "Select Devices" | Modal title |
+| `className` | `string` | ❌ | - | Additional CSS class for the modal |
+
+### `useMediaDevices` Hook
+
+```typescript
+const {
+  // Device lists
+  devices: {
+    videoInputs: Device[],    // Available cameras
+    audioInputs: Device[],    // Available microphones
+    audioOutputs: Device[]    // Available speakers
+  },
+  
+  // Currently selected devices
+  selectedDevices: {
+    videoInput?: string | null;  // Selected camera ID
+    audioInput?: string | null;  // Selected microphone ID
+    audioOutput?: string | null; // Selected speaker ID
+  },
+  
+  // Methods
+  updateSelectedDevices: (devices: Partial<SelectedDevices>) => void;
+  requestPermission: () => Promise<PermissionStatus>;
+  refreshDevices: () => Promise<void>;
+  
+  // Status
+  permissionStatus: 'granted' | 'denied' | 'prompt';
+  isLoading: boolean;
+  error: Error | null;
+  
+} = useMediaDevices();
+```
+
+## 🌟 Advanced Usage
+
+### Custom Styling
+
+You can style the modal by overriding the default CSS variables:
+
+```css
+:root {
+  --rmds-background: #ffffff;
+  --rmds-text: #333333;
+  --rmds-primary: #4f46e5;
+  --rmds-primary-hover: #4338ca;
+  --rmds-border: #e5e7eb;
+  --rmds-border-radius: 0.5rem;
+  --rmds-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+}
+```
+
+### Using the Hook Without the Modal
+
+```tsx
+function CustomDeviceSelector() {
+  const {
+    devices: { videoInputs, audioInputs },
+    selectedDevices,
+    updateSelectedDevices,
+    permissionStatus
+  } = useMediaDevices();
+  
+  if (permissionStatus === 'denied') {
+    return <div>Please enable camera and microphone permissions</div>;
+  }
+  
+  return (
+    <div>
+      <h3>Select Camera</h3>
+      <select
+        value={selectedDevices.videoInput || ''}
+        onChange={(e) => updateSelectedDevices({ videoInput: e.target.value })}
+      >
+        {videoInputs.map((device) => (
+          <option key={device.deviceId} value={device.deviceId}>
+            {device.label || `Camera ${device.deviceId.slice(0, 5)}`}
+          </option>
+        ))}
+      </select>
+      
+      {/* Add similar selects for audio devices */}
+    </div>
+  );
+}
+```
+
+## 🤝 Contributing
+
+Contributions are welcome! Please read our [contributing guidelines](CONTRIBUTING.md) to get started.
+
+## 📄 License
+
+MIT © [Huu Da](https://github.com/huuuda)
+
+---
+
+Built with ❤️ by [Huu Da](https://github.com/huuuda)
