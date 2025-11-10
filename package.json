@@ -1,5 +1,5 @@
 {
-  "name": "@your-scope/media-device-selector",
+  "name": "react-media-device-selector",
   "version": "1.0.0",
   "description": "A React component for selecting and managing media devices (camera, microphone, speaker)",
   "type": "module",
