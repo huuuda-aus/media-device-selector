@@ -281,8 +281,8 @@ Contributions are welcome! Please read our [contributing guidelines](CONTRIBUTIN
 
 ## 📄 License
 
-MIT © [Huuuda](https://github.com/huuuda)
+MIT © [Huuuda](https://github.com/huuuda-aus)
 
 ---
 
-Built with ❤️ by [Huuuda](https://github.com/huuuda)
+Built with ❤️ by [Huuuda](https://github.com/huuuda-aus)
