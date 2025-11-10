@@ -41,7 +41,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/huuuda/media-devices-selector.git"
+    "url": "git+https://github.com/huuuda/media-devices-selector.git"
   },
   "bugs": {
     "url": "https://github.com/huuuda/media-devices-selector/issues"
