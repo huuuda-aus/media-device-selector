@@ -10,8 +10,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-        with:
-          fetch-depth: 0  # Needed for version bumping
       
       - name: Setup Node.js
         uses: actions/setup-node@v3
@@ -25,30 +23,10 @@ jobs:
       - name: Build package
         run: npm run build
       
-      - name: Configure Git
-        run: |
-          git config --global user.name 'GitHub Actions'
-          git config --global user.email 'actions@github.com'
-      
-      - name: Bump version and publish
+      - name: Publish to npm
         if: github.ref == 'refs/heads/main'
         env:
           NODE_AUTH_TOKEN: ${{secrets.NPM_TOKEN}}
-          GITHUB_TOKEN: ${{ secrets.PAT }}
         run: |
-          # Configure git
-          git config --global user.name 'GitHub Actions'
-          git config --global user.email 'actions@github.com'
-          
-          # Configure npm
           echo "//registry.npmjs.org/:_authToken=$NODE_AUTH_TOKEN" > .npmrc
-          
-          # Bump version and create git tag
-          npm version patch -m "Bump version to %s [skip ci]"
-          
-          # Push the version commit and tag using PAT
-          git remote set-url origin https://x-access-token:${{ secrets.PAT }}@github.com/${{ github.repository }}.git
-          git push origin main --follow-tags
-          
-          # Publish to npm
           npm publish --access public
