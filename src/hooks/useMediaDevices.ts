@@ -84,7 +84,13 @@ const useMediaDevices = (options: UseMediaDevicesOptions = {}): UseMediaDevicesR
         if (kind === 'audioinput' || kind === 'videoinput') {
           const constraints: MediaStreamConstraints = {
             audio: kind === 'audioinput' ? { deviceId: { exact: deviceId } } : false,
-            video: kind === 'videoinput' ? { deviceId: { exact: deviceId } } : false,
+            video: kind === 'videoinput' ? { 
+              deviceId: { exact: deviceId },
+              // Request 4:3 aspect ratio
+              width: { ideal: 1280 },  // 4:3 aspect ratio
+              height: { ideal: 960 },  // 4:3 aspect ratio
+              aspectRatio: 4/3         // Enforce 4:3 aspect ratio
+            } : false,
           };
 
           // Stop any existing tracks

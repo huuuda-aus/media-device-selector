@@ -67,8 +67,15 @@ const DeviceSelectorModal: React.FC<DeviceSelectorModalProps> = ({
 
   // Handle camera preview
   useEffect(() => {
-    if (videoRef.current && activeStream) {
-      videoRef.current.srcObject = activeStream;
+    if (!isOpen) return;
+    
+    if (videoRef.current) {
+      if (activeStream) {
+        videoRef.current.srcObject = activeStream;
+      } else if (selectedDevices.cameraId) {
+        // Reinitialize the camera if we have a selected camera but no active stream
+        selectDevice('videoinput', selectedDevices.cameraId).catch(console.error);
+      }
     }
     
     return () => {
@@ -76,7 +83,7 @@ const DeviceSelectorModal: React.FC<DeviceSelectorModalProps> = ({
         videoRef.current.srcObject = null;
       }
     };
-  }, [activeStream]);
+  }, [activeStream, isOpen, selectedDevices.cameraId, selectDevice]);
 
   // Handle speaker selection
   useEffect(() => {
@@ -90,15 +97,35 @@ const DeviceSelectorModal: React.FC<DeviceSelectorModalProps> = ({
     }
   }, [selectedDevices.speakerId, targetMediaRef]);
 
-  const handleDeviceSelect = (kind: MediaDeviceKind, deviceId: string | null) => {
+  const handleDeviceSelect = async (kind: MediaDeviceKind, deviceId: string | null) => {
     if (kind === 'videoinput' && deviceId === null) {
       // Handle 'No camera' selection
+      if (videoRef.current) {
+        // Stop all video tracks
+        if (videoRef.current.srcObject) {
+          const stream = videoRef.current.srcObject as MediaStream;
+          stream.getTracks().forEach(track => track.stop());
+          videoRef.current.srcObject = null;
+        }
+      }
+      
+      // Update the state to reflect no camera is selected
       setSelectedDevices(prev => ({
         ...prev,
         cameraId: null
       }));
+      
+      // Also clear any active stream in the parent component
+      if (targetMediaRef?.current) {
+        if (targetMediaRef.current.srcObject) {
+          const stream = targetMediaRef.current.srcObject as MediaStream;
+          stream.getTracks().forEach(track => track.stop());
+          targetMediaRef.current.srcObject = null;
+        }
+      }
     } else if (deviceId) {
-      selectDevice(kind, deviceId);
+      // For other device selections, use the normal flow
+      await selectDevice(kind, deviceId);
     }
   };
 
@@ -163,7 +190,7 @@ const DeviceSelectorModal: React.FC<DeviceSelectorModalProps> = ({
     const speakers = deviceLists.filter(device => device.kind === 'audiooutput');
 
     return (
-      <div className="content">
+      <div className="deviceListsContainer">
         <div className="deviceSection">
           <h3>Microphone</h3>
           {renderDeviceList(microphones, 'audioinput')}
@@ -207,9 +234,7 @@ const DeviceSelectorModal: React.FC<DeviceSelectorModalProps> = ({
 
     return (
       <div className="content">
-        <div className="deviceListsContainer">
-          {renderDeviceLists()}
-        </div>
+        {renderDeviceLists()}
         {includeCamera && showCameraPreview && (
           <div className="previewSection">
             <h3>Camera Preview</h3>
@@ -222,7 +247,6 @@ const DeviceSelectorModal: React.FC<DeviceSelectorModalProps> = ({
                   muted
                   style={{
                     width: '100%',
-                    height: '100%',
                     backgroundColor: '#000',
                     borderRadius: '4px',
                     display: selectedDevices.cameraId ? 'block' : 'none'

@@ -2,7 +2,7 @@ import React from 'react';
 import { createRoot } from 'react-dom/client';
 import DeviceSelectorModal from '../src/components/DeviceSelectorModal';
 
-const INCLUDE_CAMERA = false;
+const INCLUDE_CAMERA = true;
 
 function Demo() {
   const [isOpen, setIsOpen] = React.useState(false);
@@ -39,7 +39,7 @@ function Demo() {
         onClose={() => setIsOpen(false)}
         onSelectionComplete={handleSelectionComplete}
         targetMediaRef={videoRef}
-        showCameraPreview={true}
+        showCameraPreview={INCLUDE_CAMERA}
         includeCamera={INCLUDE_CAMERA}
       />
 
