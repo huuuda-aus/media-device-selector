@@ -9,7 +9,7 @@ export default defineConfig({
       formats: ['es', 'cjs'],
       fileName: (format) => format === 'es' ? 'esm/index.js' : 'cjs/index.js'
     },
-    cssCodeSplit: true,
+    cssCodeSplit: false,  // Disable CSS code splitting to ensure all styles are in one file
     rollupOptions: {
       external: ['react', 'react-dom'],
       output: {
@@ -18,7 +18,11 @@ export default defineConfig({
           'react-dom': 'ReactDOM',
         },
         assetFileNames: (assetInfo) => {
-          if (assetInfo.name === 'style.css') return 'index.css';
+          // Handle all CSS files
+          if (assetInfo.name && assetInfo.name.endsWith('.css')) {
+            return 'index.css';
+          }
+          // Handle other assets
           return assetInfo.name || '';
         }
       }

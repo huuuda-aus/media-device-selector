@@ -1,4 +1,4 @@
-import './styles.css';
+import './styles/index.css';
 
 export { default as DeviceSelectorModal } from './components/DeviceSelectorModal';
 export { default as useMediaDevices } from './hooks/useMediaDevices';
