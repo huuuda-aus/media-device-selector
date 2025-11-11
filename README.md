@@ -2,8 +2,13 @@
 
 [![npm version](https://badge.fury.io/js/react-media-device-selector.svg)](https://badge.fury.io/js/react-media-device-selector)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Live Demo](https://img.shields.io/badge/Demo-Live%20Demo-blue)](https://huuuda-aus.github.io/media-device-selector/)
 
 A lightweight, customizable React component for managing media devices (camera, microphone, and speakers) with a clean, accessible UI. Built with TypeScript and fully typed for a great developer experience.
+
+## 🚀 Live Demo
+
+Check out the [live demo](https://huuuda-aus.github.io/media-device-selector/) to see the component in action!
 
 ## 🌟 Client-Side Only
 
