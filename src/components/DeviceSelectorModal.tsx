@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import useMediaDevices, { type UseMediaDevicesOptions } from '../hooks/useMediaDevices';
 import type { MediaDeviceKind, SelectedDevices } from '../types';
-import styles from './styles.module.css';
+import '../styles/index.css';
 
 interface DeviceSelectorModalProps {
   theme?: 'light' | 'dark';
@@ -108,8 +108,8 @@ const DeviceSelectorModal: React.FC<DeviceSelectorModalProps> = ({
   };
   
   const renderDeviceList = (devices: Array<{ deviceId: string; label: string; kind: MediaDeviceKind; isSelected?: boolean }>, kind: MediaDeviceKind) => {
-    if (isLoading) return <div className={styles.loading}>Loading devices...</div>;
-    if (error) return <div className={styles.error}>Error loading devices: {error.message}</div>;
+    if (isLoading) return <div className="loading">Loading devices...</div>;
+    if (error) return <div className="error">Error loading devices: {error.message}</div>;
 
     // For camera devices, add a "No camera" option
     const showNoCameraOption = kind === 'videoinput' && includeCamera;
@@ -122,10 +122,10 @@ const DeviceSelectorModal: React.FC<DeviceSelectorModalProps> = ({
 
     const deviceList = showNoCameraOption ? [noCameraOption, ...devices] : devices;
 
-    if (deviceList.length === 0) return <div className={styles.noDevices}>No {kind} devices found</div>;
+    if (deviceList.length === 0) return <div className="no-devices">No {kind} devices found</div>;
 
     return (
-      <div className={styles.deviceList}>
+      <div className="device-list">
         {deviceList.map((device) => {
           const isNoCamera = kind === 'videoinput' && device.deviceId === '';
           const isDeviceSelected = isNoCamera
@@ -137,13 +137,13 @@ const DeviceSelectorModal: React.FC<DeviceSelectorModalProps> = ({
           return (
             <div
               key={device.deviceId || 'no-camera'}
-              className={`${styles.deviceItem} ${isDeviceSelected ? styles.selected : ''}`}
+              className={`device-item ${isDeviceSelected ? 'selected' : ''}`}
               onClick={() => handleDeviceSelect(kind, isNoCamera ? null : device.deviceId)}
             >
-              <div className={styles.deviceRadio}>
-                <div className={styles.radioDot} />
+              <div className="device-radio">
+                <div className="radio-dot" />
               </div>
-              <div className={styles.deviceLabel}>
+              <div className="device-label">
                 {device.label || `Unknown ${kind.replace('input', '').replace('output', '')}`}
               </div>
             </div>
@@ -154,8 +154,8 @@ const DeviceSelectorModal: React.FC<DeviceSelectorModalProps> = ({
   };
 
   const renderDeviceLists = () => {
-    if (isLoading) return <div className={styles.loading}>Loading devices...</div>;
-    if (error) return <div className={styles.error}>Error loading devices: {error.message}</div>;
+    if (isLoading) return <div className="loading">Loading devices...</div>;
+    if (error) return <div className="error">Error loading devices: {error.message}</div>;
 
     // Filter devices by kind
     const microphones = deviceLists.filter(device => device.kind === 'audioinput');
@@ -163,18 +163,18 @@ const DeviceSelectorModal: React.FC<DeviceSelectorModalProps> = ({
     const speakers = deviceLists.filter(device => device.kind === 'audiooutput');
 
     return (
-      <div className={styles.deviceListsContainer}>
-        <div className={styles.deviceListContainer}>
+      <div className="device-lists-container">
+        <div className="device-list-container">
           <h3>Microphone</h3>
           {renderDeviceList(microphones, 'audioinput')}
         </div>
         {includeCamera && (
-          <div className={styles.deviceListContainer}>
+          <div className="device-list-container">
             <h3>Camera</h3>
             {renderDeviceList(cameras, 'videoinput')}
           </div>
         )}
-        <div className={styles.deviceListContainer}>
+        <div className="device-list-container">
           <h3>Speaker</h3>
           {renderDeviceList(speakers, 'audiooutput')}
         </div>
@@ -185,7 +185,7 @@ const DeviceSelectorModal: React.FC<DeviceSelectorModalProps> = ({
   const renderContent = () => {
     if (!isMediaDevicesSupported) {
       return (
-        <div className={styles.unsupported}>
+        <div className="unsupported">
           Your browser doesn't support the MediaDevices API. Please use a modern browser.
         </div>
       );
@@ -193,7 +193,7 @@ const DeviceSelectorModal: React.FC<DeviceSelectorModalProps> = ({
 
     if (permissionStatus === 'denied') {
       return (
-        <div className={styles.permissionDenied}>
+        <div className="permission-denied">
           <h3>Permission Required</h3>
           <p>
             Please allow access to your camera and microphone in your browser settings and refresh the page.
@@ -203,24 +203,24 @@ const DeviceSelectorModal: React.FC<DeviceSelectorModalProps> = ({
     }
 
     return (
-      <div className={styles.content}>
-        <div className={styles.deviceListsContainer}>
+      <div className="content">
+        <div className="device-lists-container">
           {renderDeviceLists()}
         </div>
         {includeCamera && showCameraPreview && (
-          <div className={styles.previewSection}>
+          <div className="preview-section">
             <h3>Camera Preview</h3>
-            <div className={styles.videoContainer}>
+            <div className="video-container">
               {selectedDevices.cameraId ? (
                 <video
                   ref={videoRef}
                   autoPlay
                   playsInline
                   muted
-                  className={styles.videoPreview}
+                  className="video-preview"
                 />
               ) : (
-                <div className={styles.noCameraSelected}>
+                <div className="no-camera-selected">
                   No camera selected
                 </div>
               )}
@@ -238,23 +238,23 @@ const DeviceSelectorModal: React.FC<DeviceSelectorModalProps> = ({
       ))}
 
       {isOpen && (
-        <div className={`${styles.modalOverlay} ${theme === 'dark' ? styles.dark : ''}`}>
-          <div className={`${styles.modal} ${className}`} style={style}>
-            <div className={styles.modalHeader}>
+        <div className={`modal-overlay ${theme === 'dark' ? 'dark-theme' : ''}`}>
+          <div className={`modal ${className}`} style={style}>
+            <div className="modal-header">
               <h2>Select Devices</h2>
             </div>
             
             {renderContent()}
             
-            <div className={styles.modalFooter}>
+            <div className="modal-footer">
               <button
-                className={`${styles.cancelButton} ${theme === 'dark' ? styles.dark : ''}`}
+                className={`cancel-button ${theme === 'dark' ? 'dark-theme' : ''}`}
                 onClick={handleClose}
               >
                 Cancel
               </button>
               <button
-                className={`${styles.confirmButton} ${theme === 'dark' ? styles.dark : ''}`}
+                className={`confirm-button ${theme === 'dark' ? 'dark-theme' : ''}`}
                 onClick={handleConfirm}
                 disabled={isLoading}
               >

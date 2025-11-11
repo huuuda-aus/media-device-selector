@@ -7,11 +7,13 @@
   "module": "dist/esm/index.js",
   "types": "dist/types/index.d.ts",
   "files": [
-    "dist"
+    "dist",
+    "dist/index.css"
   ],
+  "style": "dist/index.css",
   "scripts": {
     "dev": "vite serve demo",
-    "build:lib": "vite build --config vite.lib.config.ts && tsc --emitDeclarationOnly --declaration --declarationDir dist/types --project tsconfig.app.json",
+    "build:lib": "vite build --config vite.lib.config.ts && tsc --emitDeclarationOnly --declaration --declarationDir dist/types --project tsconfig.app.json && cp src/styles/index.css dist/",
     "preview:demo": "vite preview --port 4173 --config vite.demo.config.ts",
     "build:demo": "rm -rf docs && vite build --config vite.demo.config.ts && touch docs/.nojekyll",
     "build": "npm run build:lib && npm run build:demo",
