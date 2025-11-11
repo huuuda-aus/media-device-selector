@@ -6,7 +6,8 @@ export default defineConfig({
     lib: {
       entry: resolve(__dirname, 'src/index.ts'),
       name: 'MediaDeviceSelector',
-      fileName: (format) => `react-media-device-selector.${format}.js`,
+      formats: ['es', 'cjs'],
+      fileName: (format) => format === 'es' ? 'esm/index.js' : 'cjs/index.js'
     },
     rollupOptions: {
       external: ['react', 'react-dom'],
