@@ -8,7 +8,8 @@ export default defineConfig(({ command, mode }) => {
   
   const isProduction = mode === 'production';
   const isPreview = command === 'serve' && env.VITE_PREVIEW === 'true';
-  const base = isProduction || isPreview ? './' : '/';
+  // Always use relative paths for GitHub Pages
+  const base = './';
 
   return {
     base,
@@ -28,6 +29,7 @@ export default defineConfig(({ command, mode }) => {
     },
     build: {
       outDir: isPreview ? 'dist-preview' : '../docs',
+      assetsDir: './',  // Ensure assets are in the root of the output directory
       emptyOutDir: true,
       sourcemap: true,
       rollupOptions: {
