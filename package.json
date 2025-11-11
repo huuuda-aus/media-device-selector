@@ -1,6 +1,6 @@
 {
   "name": "react-media-device-selector",
-  "version": "1.0.10",
+  "version": "1.0.11",
   "description": "A React component for selecting and managing media devices (camera, microphone, speaker)",
   "type": "module",
   "main": "dist/cjs/index.js",
