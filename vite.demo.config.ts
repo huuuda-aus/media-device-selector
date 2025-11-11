@@ -3,6 +3,7 @@ import react from '@vitejs/plugin-react';
 import { resolve } from 'path';
 
 export default defineConfig({
+  base: './',  // This is important for GitHub Pages
   root: 'demo',
   publicDir: 'public',
   plugins: [react()],
@@ -16,6 +17,7 @@ export default defineConfig({
   build: {
     outDir: '../docs',
     emptyOutDir: true,
+    sourcemap: true,  // Helpful for debugging
   },
   resolve: {
     alias: {

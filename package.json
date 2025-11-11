@@ -12,7 +12,8 @@
   "scripts": {
     "dev": "vite serve demo",
     "build:lib": "vite build --config vite.lib.config.ts && tsc --emitDeclarationOnly --declaration --declarationDir dist/types --project tsconfig.app.json",
-    "build:demo": "vite build --config vite.demo.config.ts",
+    "preview:demo": "vite preview --port 4173 --config vite.demo.config.ts",
+    "build:demo": "rm -rf docs && vite build --config vite.demo.config.ts && touch docs/.nojekyll",
     "build": "npm run build:lib && npm run build:demo",
     "preview": "vite preview --port 3000",
     "start": "vite serve demo",
