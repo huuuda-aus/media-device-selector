@@ -12,7 +12,7 @@ export default defineConfig(({ command, mode }) => {
   const base = './';
 
   return {
-    base,
+    base: './',
     root: 'demo',
     publicDir: 'public',
     plugins: [react()],
@@ -28,7 +28,7 @@ export default defineConfig(({ command, mode }) => {
       open: true,
     },
     build: {
-      outDir: isPreview ? 'dist-preview' : '../docs',
+      outDir: '../docs',
       assetsDir: './',  // Ensure assets are in the root of the output directory
       emptyOutDir: true,
       sourcemap: true,
