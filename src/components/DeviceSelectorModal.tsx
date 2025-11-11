@@ -125,7 +125,7 @@ const DeviceSelectorModal: React.FC<DeviceSelectorModalProps> = ({
     if (deviceList.length === 0) return <div className="no-devices">No {kind} devices found</div>;
 
     return (
-      <div className="device-list">
+      <div className="deviceList">
         {deviceList.map((device) => {
           const isNoCamera = kind === 'videoinput' && device.deviceId === '';
           const isDeviceSelected = isNoCamera
@@ -137,13 +137,13 @@ const DeviceSelectorModal: React.FC<DeviceSelectorModalProps> = ({
           return (
             <div
               key={device.deviceId || 'no-camera'}
-              className={`device-item ${isDeviceSelected ? 'selected' : ''}`}
+              className={`deviceItem ${isDeviceSelected ? 'selected' : ''}`}
               onClick={() => handleDeviceSelect(kind, isNoCamera ? null : device.deviceId)}
             >
-              <div className="device-radio">
-                <div className="radio-dot" />
+              <div className="deviceRadio">
+                <div className="radioDot" />
               </div>
-              <div className="device-label">
+              <div className="deviceLabel">
                 {device.label || `Unknown ${kind.replace('input', '').replace('output', '')}`}
               </div>
             </div>
@@ -163,18 +163,18 @@ const DeviceSelectorModal: React.FC<DeviceSelectorModalProps> = ({
     const speakers = deviceLists.filter(device => device.kind === 'audiooutput');
 
     return (
-      <div className="device-lists-container">
-        <div className="device-list-container">
+      <div className="content">
+        <div className="deviceSection">
           <h3>Microphone</h3>
           {renderDeviceList(microphones, 'audioinput')}
         </div>
         {includeCamera && (
-          <div className="device-list-container">
+          <div className="deviceSection">
             <h3>Camera</h3>
             {renderDeviceList(cameras, 'videoinput')}
           </div>
         )}
-        <div className="device-list-container">
+        <div className="deviceSection">
           <h3>Speaker</h3>
           {renderDeviceList(speakers, 'audiooutput')}
         </div>
@@ -198,29 +198,38 @@ const DeviceSelectorModal: React.FC<DeviceSelectorModalProps> = ({
           <p>
             Please allow access to your camera and microphone in your browser settings and refresh the page.
           </p>
+          <button onClick={() => window.location.reload()} className="primary">
+            Refresh Page
+          </button>
         </div>
       );
     }
 
     return (
       <div className="content">
-        <div className="device-lists-container">
+        <div className="deviceListsContainer">
           {renderDeviceLists()}
         </div>
         {includeCamera && showCameraPreview && (
-          <div className="preview-section">
+          <div className="previewSection">
             <h3>Camera Preview</h3>
-            <div className="video-container">
+            <div className="videoContainer">
               {selectedDevices.cameraId ? (
                 <video
                   ref={videoRef}
                   autoPlay
                   playsInline
                   muted
-                  className="video-preview"
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    backgroundColor: '#000',
+                    borderRadius: '4px',
+                    display: selectedDevices.cameraId ? 'block' : 'none'
+                  }}
                 />
               ) : (
-                <div className="no-camera-selected">
+                <div className="noCameraSelected">
                   No camera selected
                 </div>
               )}
@@ -231,34 +240,53 @@ const DeviceSelectorModal: React.FC<DeviceSelectorModalProps> = ({
     );
   };
 
+  const modalClasses = [
+    'modal',
+    `theme-${theme}`,
+    className
+  ].filter(Boolean).join(' ');
+
   return (
     <>
-      {!isOpen && (renderButton && (
-        <div onClick={handleOpen}>{renderButton}</div>
-      ))}
-
+      {renderButton && (
+        <button 
+          onClick={handleOpen} 
+          className="open-button"
+          style={style}
+        >
+          {renderButton}
+        </button>
+      )}
       {isOpen && (
-        <div className={`modal-overlay ${theme === 'dark' ? 'dark-theme' : ''}`}>
-          <div className={`modal ${className}`} style={style}>
+        <div className="modal-overlay" onClick={handleClose}>
+          <div 
+            className={modalClasses}
+            style={style}
+            onClick={e => e.stopPropagation()}
+          >
             <div className="modal-header">
               <h2>Select Devices</h2>
-            </div>
-            
-            {renderContent()}
-            
-            <div className="modal-footer">
-              <button
-                className={`cancel-button ${theme === 'dark' ? 'dark-theme' : ''}`}
+              <button 
+                className="close-button" 
                 onClick={handleClose}
+                aria-label="Close modal"
+              >
+                &times;
+              </button>
+            </div>
+            {renderContent()}
+            <div className="modal-actions">
+              <button 
+                onClick={handleClose} 
+                className="button button-secondary"
               >
                 Cancel
               </button>
-              <button
-                className={`confirm-button ${theme === 'dark' ? 'dark-theme' : ''}`}
-                onClick={handleConfirm}
-                disabled={isLoading}
+              <button 
+                onClick={handleConfirm} 
+                className="button button-primary"
               >
-                Confirm Selection
+                Confirm
               </button>
             </div>
           </div>

@@ -14,10 +14,11 @@
   "scripts": {
     "dev": "vite serve demo",
     "build:lib": "vite build --config vite.lib.config.ts && tsc --emitDeclarationOnly --declaration --declarationDir dist/types --project tsconfig.app.json && mkdir -p dist && cp src/styles/index.css dist/",
-    "preview:demo": "vite preview --port 4173 --config vite.demo.config.ts",
+    "preview:demo": "vite preview --port 3000 --config vite.demo.config.ts",
     "build:demo": "rm -rf docs && vite build --config vite.demo.config.ts && touch docs/.nojekyll",
+    "build:preview": "rm -rf dist-preview && vite build --mode preview --config vite.demo.config.ts",
     "build": "npm run build:lib && npm run build:demo",
-    "preview": "vite preview --port 3000",
+    "preview": "npm run build:preview && VITE_PREVIEW=true npm run preview:demo",
     "start": "vite serve demo",
     "test": "jest",
     "bump": "npm version patch && git push --follow-tags && git push origin main",
@@ -84,5 +85,8 @@
     "ts-jest": "^29.1.2",
     "typescript": "^5.3.3",
     "vite": "^7.1.7"
+  },
+  "dependencies": {
+    "cross-env": "^10.1.0"
   }
 }

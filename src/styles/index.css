@@ -23,7 +23,7 @@
 }
 
 /* Modal Overlay */
-.modalOverlay {
+.modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
@@ -51,7 +51,7 @@
   overflow: hidden;
 }
 
-.modalHeader {
+.modal-header {
   padding: 1rem 1.5rem;
   border-bottom: 1px solid var(--border-color);
   display: flex;
@@ -59,26 +59,94 @@
   align-items: center;
 }
 
-.modalHeader h2 {
+.modal-header h2 {
   margin: 0;
   font-size: 1.5rem;
   font-weight: 500;
+  color: var(--text-color);
 }
 
-.closeButton {
+.close-button {
   background: none;
   border: none;
-  font-size: 1.5rem;
+  font-size: 1.75rem;
   cursor: pointer;
   color: var(--text-color);
-  padding: 0.5rem;
+  padding: 0.25rem 0.5rem;
   line-height: 1;
   opacity: 0.7;
-  transition: opacity 0.2s;
+  transition: all 0.2s ease;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.closeButton:hover {
+.close-button:hover {
   opacity: 1;
+  background-color: rgba(0, 0, 0, 0.1);
+}
+
+/* Modal Actions */
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  padding: 1rem 1.5rem;
+  border-top: 1px solid var(--border-color);
+  background-color: var(--modal-background);
+}
+
+/* Button Styles */
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem 1.25rem;
+  border-radius: 4px;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+
+.button-primary {
+  background-color: var(--selected-highlight);
+  color: white;
+  border-color: var(--selected-highlight);
+}
+
+.button-primary:hover {
+  background-color: #1976d2;
+  border-color: #1976d2;
+}
+
+.button-secondary {
+  background-color: var(--button-bg);
+  color: var(--text-color);
+  border-color: var(--border-color);
+}
+
+.button-secondary:hover {
+  background-color: var(--button-hover);
+}
+
+/* Open Button */
+.open-button {
+  background-color: var(--selected-highlight);
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9375rem;
+  transition: background-color 0.2s ease;
+}
+
+.open-button:hover {
+  background-color: #1976d2;
 }
 
 .content {
