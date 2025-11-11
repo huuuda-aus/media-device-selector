@@ -1,12 +1,24 @@
-name: Deploy to GitHub Pages
+name: Deploy Demo to GitHub Pages
 
 on:
   push:
     branches: [main]
+    paths:
+      - 'demo/**'
+      - 'src/**'
+      - 'vite.demo.config.ts'
+      - 'package.json'
   workflow_dispatch:
+    inputs:
+      reason:
+        description: 'Reason for manual deployment'
+        required: true
+        default: 'Manual deployment'
 
 permissions:
   contents: write
+  pages: write
+  id-token: write
 
 jobs:
   build-and-deploy:
@@ -26,9 +38,14 @@ jobs:
       - name: Build demo
         run: npm run build:demo
 
-      - name: Deploy to GitHub Pages
-        uses: JamesIves/github-pages-deploy-action@v4
+      - name: Setup Pages
+        uses: actions/configure-pages@v3
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v2
         with:
-          folder: docs
-          branch: gh-pages
-          clean: true
+          path: './docs'
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v2

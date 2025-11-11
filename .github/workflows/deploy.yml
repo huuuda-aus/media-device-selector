@@ -1,9 +1,17 @@
-name: Deploy
+name: Deploy to NPM
 
+# Only run when package.json version changes or on manual trigger
 on:
   push:
     branches: [main]
+    paths:
+      - 'package.json'
   workflow_dispatch:
+    inputs:
+      reason:
+        description: 'Reason for manual deployment'
+        required: true
+        default: 'Manual deployment'
 
 jobs:
   deploy:
@@ -17,16 +25,41 @@ jobs:
           node-version: '18.x'
           registry-url: 'https://registry.npmjs.org'
       
+      - name: Get package version
+        id: package-version
+        run: |
+          echo "version=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
+      
+      - name: Check if version exists
+        id: check-version
+        run: |
+          if npm view ${{ github.repository }}@${{ steps.package-version.outputs.version }} version &> /dev/null; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+            echo "Version ${{ steps.package-version.outputs.version }} already exists in the registry"
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+            echo "Version ${{ steps.package-version.outputs.version }} is new"
+          fi
+      
       - name: Install dependencies
+        if: steps.check-version.outputs.exists == 'false'
         run: npm ci
       
       - name: Build package
+        if: steps.check-version.outputs.exists == 'false'
         run: npm run build
       
       - name: Publish to npm
-        if: github.ref == 'refs/heads/main'
+        if: steps.check-version.outputs.exists == 'false' && github.ref == 'refs/heads/main'
         env:
           NODE_AUTH_TOKEN: ${{secrets.NPM_TOKEN}}
         run: |
           echo "//registry.npmjs.org/:_authToken=$NODE_AUTH_TOKEN" > .npmrc
           npm publish --access public
+          echo "Published version ${{ steps.package-version.outputs.version }} to npm"
+      
+      - name: Skip deployment
+        if: steps.check-version.outputs.exists == 'true'
+        run: |
+          echo "Skipping deployment - version ${{ steps.package-version.outputs.version }} already exists"
+          exit 0
