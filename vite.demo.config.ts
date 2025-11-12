@@ -3,16 +3,16 @@ import react from '@vitejs/plugin-react';
 import { resolve } from 'path';
 
 export default defineConfig(({ command, mode }) => {
-  // Load env file based on `mode` in the current working directory
   const env = loadEnv(mode, process.cwd(), '');
   
   const isProduction = mode === 'production';
   const isPreview = command === 'serve' && env.VITE_PREVIEW === 'true';
-  // Always use relative paths for GitHub Pages
-  const base = './';
-
+  
+  // Use repository name as base path for GitHub Pages
+  const base = isProduction ? '/media-device-selector/' : './';
+  
   return {
-    base: './',
+    base,
     root: 'demo',
     publicDir: 'public',
     plugins: [react()],
@@ -29,13 +29,18 @@ export default defineConfig(({ command, mode }) => {
     },
     build: {
       outDir: '../docs',
-      assetsDir: './',  // Ensure assets are in the root of the output directory
+      assetsDir: './',
       emptyOutDir: true,
       sourcemap: true,
       rollupOptions: {
         input: {
           main: resolve(__dirname, 'demo/index.html'),
         },
+        output: {
+          assetFileNames: 'assets/[name].[hash][extname]',
+          entryFileNames: 'assets/[name].[hash].js',
+          chunkFileNames: 'assets/[name].[hash].js'
+        }
       },
     },
     resolve: {

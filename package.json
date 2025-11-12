@@ -48,7 +48,7 @@
   "bugs": {
     "url": "https://github.com/huuuda/media-devices-selector/issues"
   },
-  "homepage": "https://github.com/huuuda/media-devices-selector#readme",
+  "homepage": "https://huuuda.github.io/media-device-selector",
   "peerDependencies": {
     "react": "^17.0.0 || ^18.0.0",
     "react-dom": "^17.0.0 || ^18.0.0"
