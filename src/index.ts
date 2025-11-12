@@ -1,7 +1,7 @@
-import './styles/index.css';
+import "./styles/index.css";
 
-export { default as DeviceSelectorModal } from './components/DeviceSelectorModal';
-export { default as useMediaDevices } from './hooks/useMediaDevices';
+export { default as DeviceSelectorModal } from "./components/DeviceSelectorModal";
+export { default as useMediaDevices } from "./hooks/useMediaDevices";
 
 export type {
   Device,
@@ -10,4 +10,4 @@ export type {
   PermissionStatus,
   SelectedDevices,
   DeviceSelectorModalProps,
-} from './types';
+} from "./types";

@@ -1,20 +1,20 @@
-import { defineConfig, loadEnv } from 'vite';
-import react from '@vitejs/plugin-react';
-import { resolve } from 'path';
+import { defineConfig, loadEnv } from "vite";
+import react from "@vitejs/plugin-react";
+import { resolve } from "path";
 
 export default defineConfig(({ command, mode }) => {
-  const env = loadEnv(mode, process.cwd(), '');
-  
-  const isProduction = mode === 'production';
-  const isPreview = command === 'serve' && env.VITE_PREVIEW === 'true';
-  
+  const env = loadEnv(mode, process.cwd(), "");
+
+  const isProduction = mode === "production";
+  const isPreview = command === "serve" && env.VITE_PREVIEW === "true";
+
   // Use repository name as base path for GitHub Pages
-  const base = isProduction ? '/media-device-selector/' : './';
-  
+  const base = isProduction ? "/media-device-selector/" : "./";
+
   return {
     base,
-    root: 'demo',
-    publicDir: 'public',
+    root: "demo",
+    publicDir: "public",
     plugins: [react()],
     server: {
       port: 3000,
@@ -28,19 +28,19 @@ export default defineConfig(({ command, mode }) => {
       open: true,
     },
     build: {
-      outDir: '../docs',
-      assetsDir: './',
+      outDir: "../docs",
+      assetsDir: "./",
       emptyOutDir: true,
       sourcemap: true,
       rollupOptions: {
         input: {
-          main: resolve(__dirname, 'demo/index.html'),
+          main: resolve(__dirname, "demo/index.html"),
         },
         output: {
-          assetFileNames: 'assets/[name].[hash][extname]',
-          entryFileNames: 'assets/[name].[hash].js',
-          chunkFileNames: 'assets/[name].[hash].js'
-        }
+          assetFileNames: "assets/[name].[hash][extname]",
+          entryFileNames: "assets/[name].[hash].js",
+          chunkFileNames: "assets/[name].[hash].js",
+        },
       },
     },
     resolve: {
@@ -49,7 +49,7 @@ export default defineConfig(({ command, mode }) => {
       },
     },
     define: {
-      'process.env': {}
-    }
+      "process.env": {},
+    },
   };
 });

@@ -1,7 +1,7 @@
 /**
  * Type representing the kind of media device
  */
-export type MediaDeviceKind = 'audioinput' | 'audiooutput' | 'videoinput';
+export type MediaDeviceKind = "audioinput" | "audiooutput" | "videoinput";
 
 /**
  * Represents a media device (camera, microphone, or speaker)
@@ -31,13 +31,25 @@ export interface SelectedDevices {
 /**
  * Permission status for media device access
  */
-export type PermissionStatus = 'prompt' | 'granted' | 'denied' | 'not-supported';
+export type PermissionStatus =
+  | "prompt"
+  | "granted"
+  | "denied"
+  | "not-supported";
 
 /**
  * Error type for media device errors
  */
 export interface MediaDeviceError extends Error {
-  name: 'NotSupportedError' | 'NotAllowedError' | 'NotFoundError' | 'NotReadableError' | 'OverconstrainedError' | 'SecurityError' | 'TypeError' | 'UnknownError';
+  name:
+    | "NotSupportedError"
+    | "NotAllowedError"
+    | "NotFoundError"
+    | "NotReadableError"
+    | "OverconstrainedError"
+    | "SecurityError"
+    | "TypeError"
+    | "UnknownError";
   message: string;
   constraint?: string;
 }
@@ -66,37 +78,37 @@ export interface DeviceSelectorModalProps {
    * The color theme of the modal
    * @default 'light'
    */
-  theme?: 'light' | 'dark';
-  
+  theme?: "light" | "dark";
+
   /**
    * Callback function that is called when the user confirms their device selection
    * @param selection - Object containing the selected device IDs
    */
   onSelectionComplete: (selection: SelectedDevices) => void;
-  
+
   /**
    * Custom React node to use as the trigger button for the modal
    * If not provided, a default button will be rendered
    */
   renderButton?: React.ReactNode;
-  
+
   /**
    * Reference to the target media element for speaker output
    * Required for speaker device selection to work
    */
   targetMediaRef?: React.RefObject<HTMLMediaElement>;
-  
+
   /**
    * Whether to show a preview of the selected camera
    * @default true
    */
   showCameraPreview?: boolean;
-  
+
   /**
    * Custom class name for the modal container
    */
   className?: string;
-  
+
   /**
    * Custom styles for the modal container
    */

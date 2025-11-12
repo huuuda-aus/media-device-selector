@@ -13,10 +13,10 @@
     "isolatedModules": true,
     "allowSyntheticDefaultImports": true,
     "forceConsistentCasingInFileNames": true,
-    
+
     /* JSX */
     "jsx": "react-jsx",
-    
+
     /* Type Checking */
     "strict": true,
     "noUnusedLocals": true,
@@ -25,7 +25,7 @@
     "noImplicitReturns": true,
     "noImplicitAny": true,
     "strictNullChecks": true,
-    
+
     /* Output */
     "declaration": true,
     "declarationMap": true,
@@ -34,5 +34,12 @@
     "rootDir": "src"
   },
   "include": ["src"],
-  "exclude": ["node_modules", "dist", "**/*.test.ts", "**/*.test.tsx", "**/*.stories.*", "demo"]
+  "exclude": [
+    "node_modules",
+    "dist",
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "**/*.stories.*",
+    "demo"
+  ]
 }

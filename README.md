@@ -43,27 +43,30 @@ pnpm add react-media-device-selector
 ## 🚀 Basic Usage
 
 ```tsx
-import { DeviceSelectorModal, useMediaDevices } from 'react-media-device-selector';
-import { useState, useRef } from 'react';
+import {
+  DeviceSelectorModal,
+  useMediaDevices,
+} from "react-media-device-selector";
+import { useState, useRef } from "react";
 
 function App() {
   const [isOpen, setIsOpen] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
-  
+
   const { devices, selectedDevices, updateSelectedDevices } = useMediaDevices();
 
-  const handleDeviceSelection = (selected: { 
-    videoInput?: string | null; 
-    audioInput?: string | null; 
-    audioOutput?: string | null; 
+  const handleDeviceSelection = (selected: {
+    videoInput?: string | null;
+    audioInput?: string | null;
+    audioOutput?: string | null;
   }) => {
     // Example: Start video stream with selected camera
     if (videoRef.current && selected.videoInput) {
       navigator.mediaDevices
-        .getUserMedia({ 
-          video: { deviceId: selected.videoInput } 
+        .getUserMedia({
+          video: { deviceId: selected.videoInput },
         })
-        .then(stream => {
+        .then((stream) => {
           if (videoRef.current) {
             videoRef.current.srcObject = stream;
           }
@@ -73,10 +76,8 @@ function App() {
 
   return (
     <div>
-      <button onClick={() => setIsOpen(true)}>
-        Select Devices
-      </button>
-      
+      <button onClick={() => setIsOpen(true)}>Select Devices</button>
+
       <DeviceSelectorModal
         isOpen={isOpen}
         onClose={() => setIsOpen(false)}
@@ -84,12 +85,12 @@ function App() {
         targetMediaRef={videoRef}
         showCameraPreview={true}
       />
-      
-      <video 
-        ref={videoRef} 
-        autoPlay 
-        playsInline 
-        style={{ width: '100%', maxWidth: '640px' }}
+
+      <video
+        ref={videoRef}
+        autoPlay
+        playsInline
+        style={{ width: "100%", maxWidth: "640px" }}
       />
     </div>
   );
@@ -100,18 +101,18 @@ function App() {
 
 ### `DeviceSelectorModal` Props
 
-| Prop | Type | Required | Default | Description |
-|------|------|----------|---------|-------------|
-| `isOpen` | `boolean` | ✅ | - | Controls the visibility of the modal |
-| `onClose` | `() => void` | ✅ | - | Callback when the modal is closed |
-| `onSelectionComplete` | `(devices: SelectedDevices) => void` | ✅ | - | Callback when device selection is confirmed |
-| `targetMediaRef` | `React.RefObject<HTMLVideoElement>` | ❌ | - | Reference to video element for camera preview |
-| `showCameraPreview` | `boolean` | ❌ | `true` | Show/hide camera preview section |
-| `includeCamera` | `boolean` | ❌ | `true` | Include camera selection |
-| `includeMicrophone` | `boolean` | ❌ | `true` | Include microphone selection |
-| `includeSpeaker` | `boolean` | ❌ | `true` | Include speaker selection |
-| `title` | `string` | ❌ | "Select Devices" | Modal title |
-| `className` | `string` | ❌ | - | Additional CSS class for the modal |
+| Prop                  | Type                                 | Required | Default          | Description                                   |
+| --------------------- | ------------------------------------ | -------- | ---------------- | --------------------------------------------- |
+| `isOpen`              | `boolean`                            | ✅       | -                | Controls the visibility of the modal          |
+| `onClose`             | `() => void`                         | ✅       | -                | Callback when the modal is closed             |
+| `onSelectionComplete` | `(devices: SelectedDevices) => void` | ✅       | -                | Callback when device selection is confirmed   |
+| `targetMediaRef`      | `React.RefObject<HTMLVideoElement>`  | ❌       | -                | Reference to video element for camera preview |
+| `showCameraPreview`   | `boolean`                            | ❌       | `true`           | Show/hide camera preview section              |
+| `includeCamera`       | `boolean`                            | ❌       | `true`           | Include camera selection                      |
+| `includeMicrophone`   | `boolean`                            | ❌       | `true`           | Include microphone selection                  |
+| `includeSpeaker`      | `boolean`                            | ❌       | `true`           | Include speaker selection                     |
+| `title`               | `string`                             | ❌       | "Select Devices" | Modal title                                   |
+| `className`           | `string`                             | ❌       | -                | Additional CSS class for the modal            |
 
 ### `useMediaDevices` Hook
 
@@ -123,24 +124,24 @@ const {
     audioInputs: Device[],    // Available microphones
     audioOutputs: Device[]    // Available speakers
   },
-  
+
   // Currently selected devices
   selectedDevices: {
     videoInput?: string | null;  // Selected camera ID
     audioInput?: string | null;  // Selected microphone ID
     audioOutput?: string | null; // Selected speaker ID
   },
-  
+
   // Methods
   updateSelectedDevices: (devices: Partial<SelectedDevices>) => void;
   requestPermission: () => Promise<PermissionStatus>;
   refreshDevices: () => Promise<void>;
-  
+
   // Status
   permissionStatus: 'granted' | 'denied' | 'prompt';
   isLoading: boolean;
   error: Error | null;
-  
+
 } = useMediaDevices();
 ```
 
@@ -170,18 +171,18 @@ function CustomDeviceSelector() {
     devices: { videoInputs, audioInputs },
     selectedDevices,
     updateSelectedDevices,
-    permissionStatus
+    permissionStatus,
   } = useMediaDevices();
-  
-  if (permissionStatus === 'denied') {
+
+  if (permissionStatus === "denied") {
     return <div>Please enable camera and microphone permissions</div>;
   }
-  
+
   return (
     <div>
       <h3>Select Camera</h3>
       <select
-        value={selectedDevices.videoInput || ''}
+        value={selectedDevices.videoInput || ""}
         onChange={(e) => updateSelectedDevices({ videoInput: e.target.value })}
       >
         {videoInputs.map((device) => (
@@ -190,7 +191,7 @@ function CustomDeviceSelector() {
           </option>
         ))}
       </select>
-      
+
       {/* Add similar selects for audio devices */}
     </div>
   );
@@ -204,23 +205,26 @@ This component is designed to work only in the browser. When using with server-s
 ### Next.js App Router
 
 ```tsx
-'use client';
+"use client";
 
-import dynamic from 'next/dynamic';
-import { Suspense } from 'react';
+import dynamic from "next/dynamic";
+import { Suspense } from "react";
 
 const DeviceSelectorModal = dynamic(
-  () => import('react-media-device-selector').then(mod => mod.DeviceSelectorModal),
-  { 
+  () =>
+    import("react-media-device-selector").then(
+      (mod) => mod.DeviceSelectorModal,
+    ),
+  {
     ssr: false,
-    loading: () => <div>Loading device selector...</div>
-  }
+    loading: () => <div>Loading device selector...</div>,
+  },
 );
 
 export default function Page() {
   return (
     <Suspense fallback={<div>Loading...</div>}>
-      <DeviceSelectorModal 
+      <DeviceSelectorModal
         isOpen={true}
         onClose={() => {}}
         onSelectionComplete={console.log}
@@ -233,18 +237,21 @@ export default function Page() {
 ### Next.js Pages Router
 
 ```tsx
-import dynamic from 'next/dynamic';
+import dynamic from "next/dynamic";
 
 const DeviceSelectorModal = dynamic(
-  () => import('react-media-device-selector').then(mod => mod.DeviceSelectorModal),
-  { ssr: false }
+  () =>
+    import("react-media-device-selector").then(
+      (mod) => mod.DeviceSelectorModal,
+    ),
+  { ssr: false },
 );
 
 function HomePage() {
   return (
     <div>
       <h1>Device Selector Demo</h1>
-      <DeviceSelectorModal 
+      <DeviceSelectorModal
         isOpen={true}
         onClose={() => {}}
         onSelectionComplete={console.log}
@@ -261,19 +268,19 @@ export default HomePage;
 For better error handling, you can use the `checkEnvironmentSupport` utility:
 
 ```tsx
-import { checkEnvironmentSupport } from 'react-media-device-selector';
+import { checkEnvironmentSupport } from "react-media-device-selector";
 
 function DeviceSelectorWrapper() {
   const env = checkEnvironmentSupport();
-  
+
   if (!env.isBrowser) {
     return <div>This component only works in the browser</div>;
   }
-  
+
   if (env.error) {
     return <div>Media devices not supported: {env.error.message}</div>;
   }
-  
+
   return <DeviceSelectorModal /* props */ />;
 }
 ```

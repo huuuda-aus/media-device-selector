@@ -41,6 +41,7 @@ type(scope): subject
 ```
 
 Example:
+
 ```
 feat(hook): add device change detection
 

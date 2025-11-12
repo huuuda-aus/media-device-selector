@@ -1,6 +1,6 @@
-import React from 'react';
-import { createRoot } from 'react-dom/client';
-import DeviceSelectorModal from '../src/components/DeviceSelectorModal';
+import React from "react";
+import { createRoot } from "react-dom/client";
+import DeviceSelectorModal from "../src/components/DeviceSelectorModal";
 
 const INCLUDE_CAMERA = true;
 
@@ -12,22 +12,22 @@ function Demo() {
     if (videoRef.current && devices.cameraId) {
       navigator.mediaDevices
         .getUserMedia({ video: { deviceId: devices.cameraId } })
-        .then(stream => {
+        .then((stream) => {
           videoRef.current!.srcObject = stream;
         });
     }
   };
 
   return (
-    <div style={{ padding: '20px', fontFamily: 'Arial, sans-serif' }}>
+    <div style={{ padding: "20px", fontFamily: "Arial, sans-serif" }}>
       <h1>Media Device Selector Demo</h1>
-      <button 
+      <button
         onClick={() => setIsOpen(true)}
         style={{
-          padding: '10px 20px',
-          fontSize: '16px',
-          cursor: 'pointer',
-          marginBottom: '20px'
+          padding: "10px 20px",
+          fontSize: "16px",
+          cursor: "pointer",
+          marginBottom: "20px",
         }}
       >
         Select Audio Devices
@@ -43,16 +43,16 @@ function Demo() {
       />
 
       {INCLUDE_CAMERA && (
-        <div style={{ marginTop: '20px' }}>
+        <div style={{ marginTop: "20px" }}>
           <h2>Camera Preview:</h2>
-          <video 
-            ref={videoRef} 
-            autoPlay 
-            playsInline 
+          <video
+            ref={videoRef}
+            autoPlay
+            playsInline
             style={{
-              maxWidth: '100%',
-              border: '1px solid #ccc',
-              borderRadius: '4px'
+              maxWidth: "100%",
+              border: "1px solid #ccc",
+              borderRadius: "4px",
             }}
           />
         </div>
@@ -61,5 +61,5 @@ function Demo() {
   );
 }
 
-const root = createRoot(document.getElementById('root')!);
+const root = createRoot(document.getElementById("root")!);
 root.render(<Demo />);
