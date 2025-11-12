@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import useMediaDevices, { type UseMediaDevicesOptions } from '../hooks/useMediaDevices';
 import type { MediaDeviceKind, SelectedDevices } from '../types';
 import '../styles/index.css';
@@ -114,19 +114,364 @@ const DeviceSelectorModal: React.FC<DeviceSelectorModalProps> = ({
     }
   }, [isOpen, selectedDevices.microphoneId]);
 
-  // Handle microphone volume analysis
-  useEffect(() => {
-    if (!isOpen || !selectedDevices.microphoneId || !activeStream) {
-      console.log('Skipping audio analysis setup - missing requirements:', {
-        isOpen,
-        hasMicrophoneId: !!selectedDevices.microphoneId,
-        hasActiveStream: !!activeStream
+  // Get a fresh stream for the selected microphone
+  const getFreshStream = useCallback(async (deviceId: string) => {
+    if (!deviceId) return null;
+    
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        audio: { 
+          deviceId: { exact: deviceId },
+          // These constraints help with getting consistent audio levels
+          autoGainControl: false,
+          echoCancellation: false,
+          noiseSuppression: false
+        } 
       });
-      return () => {
-        if (animationFrameId.current) {
-          cancelAnimationFrame(animationFrameId.current);
+      
+      if (stream.getAudioTracks().length === 0) {
+        console.warn('No audio tracks in stream');
+        stream.getTracks().forEach(track => track.stop());
+        return null;
+      }
+      
+      // Create a dummy audio element to keep the stream active
+      const audio = new Audio();
+      audio.srcObject = stream;
+      audio.muted = true;
+      
+      // Store the audio element for cleanup
+      const audioElementRef = { current: audio };
+      
+      const playPromise = audio.play().catch(e => {
+        console.error('Error playing audio:', e);
+        // Clean up if playback fails
+        audioElementRef.current.srcObject = null;
+        stream.getTracks().forEach(track => track.stop());
+        return null;
+      });
+      
+      // Return cleanup function along with the stream
+      return {
+        stream,
+        cleanup: async () => {
+          try {
+            audioElementRef.current.pause();
+            audioElementRef.current.srcObject = null;
+            stream.getTracks().forEach(track => track.stop());
+          } catch (e) {
+            console.error('Error cleaning up audio:', e);
+          }
         }
       };
+    } catch (error) {
+      console.error('Error getting fresh stream:', error);
+      return null;
+    }
+  }, []);
+
+  // Track camera stream separately from the audio stream
+  const cameraStreamRef = useRef<MediaStream | null>(null);
+
+  // Track audio stream separately from the camera stream
+  const audioStreamRef = useRef<{stream: MediaStream; cleanup: () => void} | null>(null);
+
+  // Handle microphone stream initialization and cleanup
+  useEffect(() => {
+    if (!isOpen || !selectedDevices.microphoneId) {
+      // Clean up any existing audio stream
+      if (audioStreamRef.current) {
+        audioStreamRef.current.cleanup();
+        audioStreamRef.current = null;
+      }
+      setVolume(0);
+      return;
+    }
+
+    let audioContext: AudioContext | null = null;
+    let analyser: AnalyserNode | null = null;
+    let dataArray: Uint8Array | null = null;
+    let animationFrameId: number | null = null;
+    let audioSource: MediaStreamAudioSourceNode | null = null;
+    let isMounted = true;
+
+    const analyzeAudio = () => {
+      if (!isMounted || !analyser || !dataArray) return;
+
+      try {
+        analyser.getByteFrequencyData(dataArray);
+        
+        // Calculate average volume
+        const sum = dataArray.reduce((a, b) => a + b, 0);
+        const avg = sum / dataArray.length;
+        
+        // Normalize to 0-1 range and update state
+        setVolume(avg / 255);
+        
+        animationFrameId = requestAnimationFrame(analyzeAudio);
+      } catch (error) {
+        console.error('Error in audio analysis:', error);
+      }
+    };
+
+    const setupAudioAnalysis = async (stream: MediaStream) => {
+      if (stream.getAudioTracks().length === 0) {
+        console.warn('No audio tracks available for analysis');
+        return;
+      }
+
+      try {
+        console.log('Setting up audio analysis...');
+        
+        // Create audio context and nodes
+        audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+        analyser = audioContext.createAnalyser();
+        analyser.fftSize = 256;
+        
+        // Connect the audio source to the analyser
+        audioSource = audioContext.createMediaStreamSource(stream);
+        audioSource.connect(analyser);
+        
+        // Create data array for frequency data
+        dataArray = new Uint8Array(analyser.frequencyBinCount);
+        
+        // Start the analysis loop
+        animationFrameId = requestAnimationFrame(analyzeAudio);
+      } catch (error) {
+        console.error('Error setting up audio analysis:', error);
+      }
+    };
+
+    const initializeMicrophone = async () => {
+      if (!isMounted) return;
+      
+      try {
+        // Only reinitialize if microphone device changed
+        const currentDeviceId = audioStreamRef.current?.stream.getAudioTracks()[0]?.getSettings().deviceId;
+        if (audioStreamRef.current && currentDeviceId === selectedDevices.microphoneId) {
+          return; // Already using the correct device
+        }
+
+        // Clean up existing stream if any
+        if (audioStreamRef.current) {
+          audioStreamRef.current.cleanup();
+          audioStreamRef.current = null;
+        }
+
+        // Get new microphone stream
+        const result = await getFreshStream(selectedDevices.microphoneId);
+        
+        if (!result || !isMounted) {
+          if (result) result.cleanup();
+          return;
+        }
+        
+        audioStreamRef.current = result;
+        
+        // Set up audio analysis if we have audio tracks
+        if (result.stream.getAudioTracks().length > 0) {
+          await setupAudioAnalysis(result.stream);
+        }
+      } catch (error) {
+        console.error('Error initializing microphone:', error);
+      }
+    };
+
+    // Initialize microphone with a small delay to prevent UI jank
+    const initTimer = setTimeout(() => {
+      if (isMounted) {
+        initializeMicrophone().catch(console.error);
+      }
+    }, 50);
+
+    return () => {
+      isMounted = false;
+      clearTimeout(initTimer);
+      
+      // Clean up audio analysis
+      if (animationFrameId) {
+        cancelAnimationFrame(animationFrameId);
+      }
+      
+      // Disconnect audio nodes
+      if (audioSource && analyser) {
+        audioSource.disconnect(analyser);
+      }
+      
+      // Close audio context
+      if (audioContext && audioContext.state !== 'closed') {
+        audioContext.close().catch(console.error);
+      }
+      
+      // Clean up audio stream (the cleanup function will handle stopping tracks)
+      if (audioStreamRef.current) {
+        audioStreamRef.current.cleanup();
+        audioStreamRef.current = null;
+      }
+      
+      // Reset volume when cleaning up
+      setVolume(0);
+    };
+  }, [isOpen, selectedDevices.microphoneId, getFreshStream]);
+
+  // Handle camera stream initialization and cleanup
+  useEffect(() => {
+    if (!isOpen || !showCameraPreview || !selectedDevices.cameraId) {
+      if (cameraStreamRef.current) {
+        cameraStreamRef.current.getTracks().forEach(track => track.stop());
+        cameraStreamRef.current = null;
+        if (videoRef.current) {
+          videoRef.current.srcObject = null;
+        }
+      }
+      return;
+    }
+
+    let stream: MediaStream | null = null;
+    let isMounted = true;
+
+    const initializeCamera = async () => {
+      try {
+        // Only reinitialize if camera device changed or no stream exists
+        const currentDeviceId = cameraStreamRef.current?.getVideoTracks()[0]?.getSettings().deviceId;
+        if (cameraStreamRef.current && currentDeviceId === selectedDevices.cameraId) {
+          return; // Already using the correct device
+        }
+
+        // Stop any existing camera stream
+        if (cameraStreamRef.current) {
+          cameraStreamRef.current.getTracks().forEach(track => track.stop());
+          cameraStreamRef.current = null;
+        }
+
+        // Get new camera stream
+        const videoConstraints = selectedDevices.cameraId 
+          ? { 
+              deviceId: { exact: selectedDevices.cameraId },
+              width: { ideal: 1280 },
+              height: { ideal: 720 }
+            }
+          : { width: { ideal: 1280 }, height: { ideal: 720 } };
+          
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: videoConstraints,
+          audio: false
+        });
+        
+        if (!isMounted) {
+          stream.getTracks().forEach(track => track.stop());
+          return;
+        }
+
+        cameraStreamRef.current = stream;
+        
+        if (videoRef.current) {
+          // Set muted and playsInline for better mobile support
+          videoRef.current.muted = true;
+          videoRef.current.playsInline = true;
+          videoRef.current.srcObject = stream;
+          videoRef.current.play().catch(error => {
+            console.error('Error playing video:', error);
+          });
+        }
+      } catch (error) {
+        console.error('Error initializing camera:', error);
+      }
+    };
+
+    // Initialize immediately if already open
+    if (isOpen) {
+      initializeCamera().catch(console.error);
+    }
+
+    return () => {
+      isMounted = false;
+      // Only clean up if component is unmounting or preview is being hidden
+      if (!isOpen || !showCameraPreview) {
+        if (cameraStreamRef.current) {
+          cameraStreamRef.current.getTracks().forEach(track => track.stop());
+          cameraStreamRef.current = null;
+        }
+        if (videoRef.current) {
+          videoRef.current.srcObject = null;
+        }
+      }
+    };
+  }, [isOpen, showCameraPreview, selectedDevices.cameraId]);
+
+  // Handle microphone stream initialization and cleanup
+  useEffect(() => {
+    if (!isOpen || !selectedDevices.microphoneId) {
+      // Cleanup is handled by the useMediaDevices hook
+      return;
+    }
+
+    let isMounted = true;
+    let localStream: MediaStream | null = null;
+
+    const initializeMicrophone = async () => {
+      // If we already have an active stream with the correct device, use it
+      const currentAudioTrack = activeStream?.getAudioTracks().find(t => t.kind === 'audio');
+      if (currentAudioTrack?.readyState === 'live' && 
+          currentAudioTrack.getSettings().deviceId === selectedDevices.microphoneId) {
+        return;
+      }
+
+      // Get a fresh stream for the selected microphone
+      localStream = await getFreshStream(selectedDevices.microphoneId);
+      if (!localStream || !isMounted) return;
+
+      // Make sure the stream is active
+      const audioTracks = localStream.getAudioTracks();
+      if (audioTracks.length === 0) return;
+
+      // Enable the audio track
+      audioTracks[0].enabled = true;
+      
+      // Update the active stream with the enabled audio track
+      await selectDevice('audioinput', selectedDevices.microphoneId);
+    };
+
+    // Small delay to ensure the UI is ready
+    const timer = setTimeout(() => {
+      initializeMicrophone().catch(console.error);
+    }, 100);
+
+    return () => {
+      isMounted = false;
+      clearTimeout(timer);
+      
+      // Note: We don't stop the localStream tracks here as they might be in use by activeStream
+      // The useMediaDevices hook will handle cleaning up the activeStream
+    };
+  }, [isOpen, selectedDevices.microphoneId, activeStream, selectDevice, getFreshStream]);
+
+  // Handle microphone volume analysis - only when modal is open
+  useEffect(() => {
+    if (!isOpen || !selectedDevices.microphoneId || !activeStream) {
+      if (animationFrameId.current) {
+        cancelAnimationFrame(animationFrameId.current);
+        animationFrameId.current = undefined;
+      }
+      return;
+    }
+    
+    // Make sure we have audio tracks
+    const audioTracks = activeStream.getAudioTracks();
+    if (audioTracks.length === 0) {
+      console.log('No audio tracks in stream');
+      return;
+    }
+
+    const audioTrack = audioTracks[0];
+    if (audioTrack.readyState !== 'live') {
+      console.log('Audio track is not live');
+      return;
+    }
+    
+    if (!audioTrack.enabled) {
+      console.log('Audio track is disabled, enabling...');
+      audioTrack.enabled = true;
     }
 
     console.log('Setting up audio analysis...');
@@ -138,8 +483,22 @@ const DeviceSelectorModal: React.FC<DeviceSelectorModalProps> = ({
     analyserNode.fftSize = 64; // Higher fftSize for better frequency resolution
     analyserNode.smoothingTimeConstant = 0.3; // Smoother transitions
     
-    // Create a new stream source from the active stream
-    const source = ctx.createMediaStreamSource(activeStream);
+    // Make sure we have an active audio track
+    const tracks = activeStream.getAudioTracks();
+    if (tracks.length === 0) {
+      console.log('No audio tracks available for analysis');
+      return;
+    }
+
+    console.log('Setting up audio analysis with track:', {
+      id: tracks[0].id,
+      enabled: tracks[0].enabled,
+      readyState: tracks[0].readyState,
+      muted: tracks[0].muted
+    });
+    // Create a new stream with just the audio track to avoid interference
+    const audioStream = new MediaStream([activeStream.getAudioTracks()[0]]);
+    const source = ctx.createMediaStreamSource(audioStream);
     source.connect(analyserNode);
     
     // Create a silent destination to prevent audio feedback
@@ -171,15 +530,13 @@ const DeviceSelectorModal: React.FC<DeviceSelectorModalProps> = ({
       const now = Date.now();
       if (now - lastLogTime > 1000) {
         lastLogTime = now;
-        console.log('Data array values (first 10):', Array.from(dataArray).slice(0, 10));
-        console.log('AudioContext state:', ctx.state);
-        console.log('Analyser properties:', {
-          fftSize: analyserNode.fftSize,
-          frequencyBinCount: analyserNode.frequencyBinCount,
-          minDecibels: analyserNode.minDecibels,
-          maxDecibels: analyserNode.maxDecibels,
-          smoothingTimeConstant: analyserNode.smoothingTimeConstant
-        });
+        if (process.env.NODE_ENV === 'development') {
+          console.log('Audio analysis active:', {
+            state: ctx.state,
+            systemVolume,
+            currentVolume: volume
+          });
+        }
       }
       
       // Calculate average volume from the frequency data
@@ -238,7 +595,7 @@ const DeviceSelectorModal: React.FC<DeviceSelectorModalProps> = ({
         console.error('Error cleaning up audio:', e);
       }
     };
-  }, [activeStream, selectedDevices.microphoneId, isOpen]);
+  }, [activeStream, selectedDevices.microphoneId, isOpen, isMediaDevicesSupported, permissionStatus]);
 
   // Handle camera preview
   useEffect(() => {
