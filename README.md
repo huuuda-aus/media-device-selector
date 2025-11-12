@@ -52,13 +52,11 @@ function App() {
   
   const { devices, selectedDevices, updateSelectedDevices } = useMediaDevices();
 
-  const handleSelectionComplete = (selected: { 
+  const handleDeviceSelection = (selected: { 
     videoInput?: string | null; 
     audioInput?: string | null; 
     audioOutput?: string | null; 
   }) => {
-    console.log('Selected devices:', selected);
-    
     // Example: Start video stream with selected camera
     if (videoRef.current && selected.videoInput) {
       navigator.mediaDevices

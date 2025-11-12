@@ -243,7 +243,6 @@ const useMediaDevices = (options: UseMediaDevicesOptions = {}): UseMediaDevicesR
   useEffect(() => {
     // Skip if not supported
     if (!isMediaDevicesSupported) {
-      console.log('MediaDevices API not supported');
       setError(new Error('MediaDevices API is not supported in this browser'));
       setIsLoading(false);
       return;
@@ -251,11 +250,9 @@ const useMediaDevices = (options: UseMediaDevicesOptions = {}): UseMediaDevicesR
     
     // Prevent multiple initializations
     if (initRef.current) {
-      console.log('Already initialized, skipping...');
       return;
     }
 
-    console.log('Setting up device change listener and performing initial enumeration...');
     initRef.current = true;
     
     // Create a flag to track if we're currently enumerating
@@ -269,28 +266,21 @@ const useMediaDevices = (options: UseMediaDevicesOptions = {}): UseMediaDevicesR
 
     // Wrapper function to handle device changes
     const handleDeviceChange = async () => {
-      console.log('Device change handler called, isMounted:', isMounted.current);
       if (!isMounted.current) return;
       
       if (isEnumerating) {
-        console.log('Already enumerating, queuing next enumeration...');
         pendingDeviceChange = true;
         return;
       }
       
       try {
         isEnumerating = true;
-        console.log('Starting device enumeration...');
         await enumerateDevices();
-        console.log('Device enumeration completed');
-      } catch (err) {
-        console.error('Error in device enumeration:', err);
       } finally {
         isEnumerating = false;
         
         // If a device change happened while we were enumerating, run again
         if (pendingDeviceChange) {
-          console.log('Processing queued device change...');
           pendingDeviceChange = false;
           setTimeout(handleDeviceChange, 0);
         }
@@ -301,17 +291,14 @@ const useMediaDevices = (options: UseMediaDevicesOptions = {}): UseMediaDevicesR
     deviceChangeHandler.current = handleDeviceChange;
 
     // Set up the event listener
-    console.log('Adding devicechange event listener');
     navigator.mediaDevices.addEventListener('devicechange', handleDeviceChange);
     
     // Initial device enumeration
     const initialize = async () => {
       try {
-        console.log('Starting initial device enumeration...');
         setIsLoading(true);
         await handleDeviceChange();
       } catch (err) {
-        console.error('Error during initial device enumeration:', err);
         if (isMounted.current) {
           setError(err instanceof Error ? err : new Error('Failed to enumerate devices'));
         }
@@ -323,14 +310,11 @@ const useMediaDevices = (options: UseMediaDevicesOptions = {}): UseMediaDevicesR
     };
     
     // Start the initialization
-    console.log('Starting initialization...');
     initialize();
 
     // Cleanup function
     return () => {
-      console.log('Running cleanup...');
       if (deviceChangeHandler.current) {
-        console.log('Removing devicechange event listener');
         navigator.mediaDevices.removeEventListener('devicechange', deviceChangeHandler.current);
         deviceChangeHandler.current = null;
       }
@@ -344,70 +328,23 @@ const useMediaDevices = (options: UseMediaDevicesOptions = {}): UseMediaDevicesR
   // Organize devices by kind - only run after initial load
   const [hasInitialDevices, setHasInitialDevices] = useState(false);
   
-  // Log when devices state changes
-  useEffect(() => {
-    console.group('Devices State Update');
-    console.log('Devices array length:', devices.length);
-    console.log('Current devices:', devices);
-    console.groupEnd();
-  }, [devices]);
   
   // Update hasInitialDevices when we first get devices
   useEffect(() => {
-    if (devices.length > 0) {
-      console.group('Initial Devices Loaded');
-      console.log('Number of devices:', devices.length);
-      console.log('Current hasInitialDevices:', hasInitialDevices);
-      
-      if (!hasInitialDevices) {
-        console.log('Setting hasInitialDevices to true');
-        setHasInitialDevices(true);
-      }
-      
-      console.groupEnd();
+    if (devices.length > 0 && !hasInitialDevices) {
+      setHasInitialDevices(true);
     }
   }, [devices.length, hasInitialDevices]);
 
   const deviceLists = useMemo<DeviceLists>(() => {
-    console.group('deviceLists useMemo');
-    console.log('hasInitialDevices:', hasInitialDevices);
-    console.log('isLoading:', isLoading);
-    console.log('devices count:', devices.length);
-    
     // Don't process until we've completed initial device loading
     if (!hasInitialDevices || isLoading) {
-      console.log('Devices not ready yet, returning empty lists');
-      console.groupEnd();
       return { microphones: [], cameras: [], speakers: [] };
     }
-    
-    console.log('Organizing devices. Device count:', devices.length);
     
     const microphones = devices.filter(d => d.kind === 'audioinput');
     const cameras = devices.filter(d => d.kind === 'videoinput');
     const speakers = devices.filter(d => d.kind === 'audiooutput');
-    
-    console.group('Devices by type');
-    console.log('Microphones:', microphones.length);
-    console.log('Cameras:', cameras.length);
-    console.log('Speakers:', speakers.length);
-    console.log('Other:', devices.length - (microphones.length + cameras.length + speakers.length));
-    
-    console.group('Device Details');
-    console.group('Microphones:');
-    microphones.forEach((m, i) => console.log(`${i + 1}. ${m.label || 'Unnamed'} (${m.deviceId})`));
-    console.groupEnd();
-    
-    console.group('Cameras:');
-    cameras.forEach((c, i) => console.log(`${i + 1}. ${c.label || 'Unnamed'} (${c.deviceId})`));
-    console.groupEnd();
-    
-    console.group('Speakers:');
-    speakers.forEach((s, i) => console.log(`${i + 1}. ${s.label || 'Unnamed'} (${s.deviceId})`));
-    console.groupEnd();
-    
-    console.groupEnd(); // End Device Details
-    console.groupEnd(); // End Devices by type
     
     const result = {
       microphones: microphones.map(d => ({
@@ -423,18 +360,6 @@ const useMediaDevices = (options: UseMediaDevicesOptions = {}): UseMediaDevicesR
         isSelected: d.deviceId === selectedDevices.speakerId
       }))
     };
-    
-    console.log('Organized device lists:', {
-      microphones: result.microphones.map(d => `${d.label || 'Unlabeled'} (${d.deviceId})`),
-      cameras: result.cameras.map(d => `${d.label || 'Unlabeled'} (${d.deviceId})`),
-      speakers: result.speakers.map(d => `${d.label || 'Unlabeled'} (${d.deviceId})`)
-    });
-    
-    console.log('Organized devices:', {
-      microphones: result.microphones.map(d => d.label || d.deviceId),
-      cameras: result.cameras.map(d => d.label || d.deviceId),
-      speakers: result.speakers.map(d => d.label || d.deviceId)
-    });
     
     return result;
   }, [devices, selectedDevices, isLoading, hasInitialDevices]);

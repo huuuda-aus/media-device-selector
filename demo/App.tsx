@@ -25,7 +25,6 @@ function App() {
         isOpen={isOpen}
         onClose={() => setIsOpen(false)}
         onSelectionComplete={(devices) => {
-          console.log('Selected devices:', devices);
           if (videoRef.current && devices.cameraId) {
             navigator.mediaDevices
               .getUserMedia({ video: { deviceId: devices.cameraId } })
@@ -39,6 +38,7 @@ function App() {
         }}
         targetMediaRef={videoRef}
         showCameraPreview={true}
+        includeCamera={true}
       />
 
       <div style={{ marginTop: '20px' }}>

@@ -9,7 +9,6 @@ function Demo() {
   const videoRef = React.useRef<HTMLVideoElement>(null);
 
   const handleSelectionComplete = (devices: any) => {
-    console.log('Selected devices:', devices);
     if (videoRef.current && devices.cameraId) {
       navigator.mediaDevices
         .getUserMedia({ video: { deviceId: devices.cameraId } })

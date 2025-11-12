@@ -198,6 +198,50 @@
   background-color: rgba(30, 136, 229, 0.1);
 }
 
+/* Volume Indicator */
+.volume-indicator-container {
+  width: 100%;
+  height: 6px;
+  background-color: var(--border-color);
+  border-radius: 3px;
+  margin-top: 8px;
+  overflow: hidden;
+  position: relative;
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.1);
+}
+
+.volume-level {
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 0%;
+  min-width: 6px; /* Ensure it's always visible when active */
+  background-color: var(--selected-highlight);
+  transition: width 50ms ease-out;
+  border-radius: 3px;
+  will-change: width;
+  transform: translateZ(0);
+  box-shadow: 0 0 4px rgba(0,0,0,0.2);
+}
+
+/* Make sure device labels stack properly */
+.deviceLabel {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  width: 100%;
+}
+
+/* Add some visual feedback when selected */
+.deviceItem.selected .volume-indicator-container {
+  background-color: rgba(0,0,0,0.05);
+}
+
+.theme-dark .deviceItem.selected .volume-indicator-container {
+  background-color: rgba(255,255,255,0.1);
+}
+
 .deviceRadio {
   width: 18px;
   height: 18px;
