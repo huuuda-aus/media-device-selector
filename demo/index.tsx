@@ -2,11 +2,15 @@ import React from "react";
 import { createRoot } from "react-dom/client";
 import DeviceSelectorModal from "../src/components/DeviceSelectorModal";
 
-const INCLUDE_CAMERA = true;
+// Control camera inclusion via state instead of a constant
+const DemoIncludeCameraDefault = true;
 
 function Demo() {
   const [isOpen, setIsOpen] = React.useState(false);
   const videoRef = React.useRef<HTMLVideoElement>(null);
+  const [includeCamera, setIncludeCamera] = React.useState(
+    DemoIncludeCameraDefault,
+  );
 
   const handleSelectionComplete = (devices: any) => {
     if (videoRef.current && devices.cameraId) {
@@ -21,6 +25,19 @@ function Demo() {
   return (
     <div style={{ padding: "20px", fontFamily: "Arial, sans-serif" }}>
       <h1>Media Device Selector Demo</h1>
+
+<p>
+  <label style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+    <input
+      type="checkbox"
+      checked={includeCamera}
+      onChange={(e) => setIncludeCamera(e.target.checked)}
+      style={{ zoom: 1.6 }}
+    />
+    <span>Include Camera</span>
+  </label>
+</p>
+
       <button
         onClick={() => setIsOpen(true)}
         style={{
@@ -30,7 +47,7 @@ function Demo() {
           marginBottom: "20px",
         }}
       >
-        Select Audio Devices
+        Select Devices
       </button>
 
       <DeviceSelectorModal
@@ -38,12 +55,12 @@ function Demo() {
         onClose={() => setIsOpen(false)}
         onSelectionComplete={handleSelectionComplete}
         targetMediaRef={videoRef}
-        showCameraPreview={INCLUDE_CAMERA}
-        includeCamera={INCLUDE_CAMERA}
+        showCameraPreview={includeCamera}
+        includeCamera={includeCamera}
       />
 
-      {INCLUDE_CAMERA && (
-        <div style={{ marginTop: "20px" }}>
+      {includeCamera && (
+        <div style={{ marginTop: "20px", maxWidth: "400px" }}>
           <h2>Camera Preview:</h2>
           <video
             ref={videoRef}
@@ -53,6 +70,7 @@ function Demo() {
               maxWidth: "100%",
               border: "1px solid #ccc",
               borderRadius: "4px",
+              background: "#000",
             }}
           />
         </div>

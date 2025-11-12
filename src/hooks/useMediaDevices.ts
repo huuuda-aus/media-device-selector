@@ -406,7 +406,6 @@ const useMediaDevices = (
   // Cleanup on unmount
   useEffect(() => {
     return () => {
-      console.log("Component unmounting, cleaning up...");
       isMounted.current = false;
       cleanup();
       // Reset initRef when component fully unmounts

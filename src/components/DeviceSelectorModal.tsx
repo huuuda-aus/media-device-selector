@@ -31,11 +31,11 @@ const DeviceSelectorModal: React.FC<DeviceSelectorModalProps> = ({
   onClose,
 }) => {
   const [isOpenState, setIsOpenState] = useState(false);
+  const [, setAnalyser] = useState<AnalyserNode | null>(null);
+  const [, setAudioContext] = useState<AudioContext | null>(null);
+  const [, setDataArray] = useState<Uint8Array | null>(null);
   const [volume, setVolume] = useState(0);
-  const [systemVolume, setSystemVolume] = useState(1.0); // 0 to 1 scale
-  const [analyser, setAnalyser] = useState<AnalyserNode | null>(null);
-  const [audioContext, setAudioContext] = useState<AudioContext | null>(null);
-  const [dataArray, setDataArray] = useState<Uint8Array | null>(null);
+  const [systemVolume, setSystemVolume] = useState(1);
   const animationFrameId = useRef<number>();
   const isOpen = isOpenProp ?? isOpenState;
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -97,8 +97,6 @@ const DeviceSelectorModal: React.FC<DeviceSelectorModalProps> = ({
         const currentGain = gainNode.gain.value;
         setSystemVolume(currentGain);
 
-        console.log("System microphone volume:", currentGain);
-
         // Clean up
         source.disconnect();
         gainNode.disconnect();
@@ -146,8 +144,7 @@ const DeviceSelectorModal: React.FC<DeviceSelectorModalProps> = ({
 
       // Store the audio element for cleanup
       const audioElementRef = { current: audio };
-
-      const playPromise = audio.play().catch((e) => {
+      audio.play().catch((e) => {
         console.error("Error playing audio:", e);
         // Clean up if playback fails
         audioElementRef.current.srcObject = null;
@@ -229,8 +226,6 @@ const DeviceSelectorModal: React.FC<DeviceSelectorModalProps> = ({
       }
 
       try {
-        console.log("Setting up audio analysis...");
-
         // Create audio context and nodes
         audioContext = new (window.AudioContext ||
           (window as any).webkitAudioContext)();
@@ -355,22 +350,17 @@ const DeviceSelectorModal: React.FC<DeviceSelectorModalProps> = ({
     // Make sure we have audio tracks
     const audioTracks = activeStream.getAudioTracks();
     if (audioTracks.length === 0) {
-      console.log("No audio tracks in stream");
       return;
     }
 
     const audioTrack = audioTracks[0];
     if (audioTrack.readyState !== "live") {
-      console.log("Audio track is not live");
       return;
     }
 
     if (!audioTrack.enabled) {
-      console.log("Audio track is disabled, enabling...");
       audioTrack.enabled = true;
     }
-
-    console.log("Setting up audio analysis...");
 
     // Create audio context and analyser
     const AudioContext =
@@ -387,12 +377,6 @@ const DeviceSelectorModal: React.FC<DeviceSelectorModalProps> = ({
       return;
     }
 
-    console.log("Setting up audio analysis with track:", {
-      id: tracks[0].id,
-      enabled: tracks[0].enabled,
-      readyState: tracks[0].readyState,
-      muted: tracks[0].muted,
-    });
     // Create a new stream with just the audio track to avoid interference
     const audioStream = new MediaStream([activeStream.getAudioTracks()[0]]);
     const source = ctx.createMediaStreamSource(audioStream);
@@ -409,14 +393,6 @@ const DeviceSelectorModal: React.FC<DeviceSelectorModalProps> = ({
     setAnalyser(analyserNode);
     setDataArray(dataArray);
 
-    // Debug logs
-    console.log("AudioContext created:", ctx);
-    console.log("AnalyserNode created:", analyserNode);
-    console.log(
-      "ActiveStream tracks:",
-      (activeStream as MediaStream).getTracks?.() ?? [],
-    );
-
     // Start the animation loop
     let animationRunning = true;
     let lastLogTime = 0;
@@ -432,13 +408,6 @@ const DeviceSelectorModal: React.FC<DeviceSelectorModalProps> = ({
       const now = Date.now();
       if (now - lastLogTime > 1000) {
         lastLogTime = now;
-        if (process.env.NODE_ENV === "development") {
-          console.log("Audio analysis active:", {
-            state: ctx.state,
-            systemVolume,
-            currentVolume: volume,
-          });
-        }
       }
 
       // Calculate average volume from the frequency data
@@ -463,14 +432,6 @@ const DeviceSelectorModal: React.FC<DeviceSelectorModalProps> = ({
           systemScaledVolume > prevVolume
             ? systemScaledVolume // Immediate response to sound
             : Math.max(prevVolume - 0.02, 0); // Slow decay
-        if (now - lastLogTime > 1000) {
-          console.log("Volume update:", {
-            newVolume,
-            normalizedVolume,
-            average,
-            volume: volume, // Current volume state value
-          });
-        }
         return newVolume;
       });
 
