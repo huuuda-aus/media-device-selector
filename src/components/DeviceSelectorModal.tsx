@@ -191,10 +191,6 @@ const DeviceSelectorModal: React.FC<DeviceSelectorModalProps> = ({
 
     return (
       <div className="deviceListsContainer">
-        <div className="deviceSection">
-          <h3>Microphone</h3>
-          {renderDeviceList(microphones, 'audioinput')}
-        </div>
         {includeCamera && (
           <div className="deviceSection">
             <h3>Camera</h3>
@@ -202,9 +198,15 @@ const DeviceSelectorModal: React.FC<DeviceSelectorModalProps> = ({
           </div>
         )}
         <div className="deviceSection">
-          <h3>Speaker</h3>
-          {renderDeviceList(speakers, 'audiooutput')}
+          <h3>Microphone</h3>
+          {renderDeviceList(microphones, 'audioinput')}
         </div>
+        {speakers.length > 0 && (
+          <div className="deviceSection">
+            <h3>Speaker</h3>
+            {renderDeviceList(speakers, 'audiooutput')}
+          </div>
+        )}
       </div>
     );
   };
@@ -237,7 +239,6 @@ const DeviceSelectorModal: React.FC<DeviceSelectorModalProps> = ({
         {renderDeviceLists()}
         {includeCamera && showCameraPreview && (
           <div className="previewSection">
-            <h3>Camera Preview</h3>
             <div className="videoContainer">
               {selectedDevices.cameraId ? (
                 <video
