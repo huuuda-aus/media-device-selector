@@ -546,6 +546,50 @@ const DeviceSelectorModal: React.FC<DeviceSelectorModalProps> = ({
     handleClose();
   };
 
+  const playTestTone = useCallback(async () => {
+    try {
+      const AudioContext =
+        (window as any).AudioContext || (window as any).webkitAudioContext;
+      const ctx = new AudioContext();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      const dest = ctx.createMediaStreamDestination();
+
+      osc.type = "sine";
+      osc.frequency.value = 880;
+      gain.gain.setValueAtTime(0.0001, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.2, ctx.currentTime + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.35);
+
+      osc.connect(gain);
+      gain.connect(dest);
+
+      const audioEl = new Audio();
+      (audioEl as any).srcObject = dest.stream as any;
+
+      if (
+        selectedDevices.speakerId &&
+        typeof (audioEl as any).setSinkId === "function"
+      ) {
+        try {
+          await (audioEl as any).setSinkId(selectedDevices.speakerId);
+        } catch {}
+      }
+
+      await audioEl.play();
+      osc.start();
+      setTimeout(async () => {
+        try {
+          osc.stop();
+          osc.disconnect();
+          gain.disconnect();
+          if (ctx.state !== "closed") await ctx.close();
+          (audioEl as any).srcObject = null;
+        } catch {}
+      }, 400);
+    } catch {}
+  }, [selectedDevices.speakerId]);
+
   const renderDeviceList = (
     devices: Array<{
       deviceId: string;
@@ -707,7 +751,23 @@ const DeviceSelectorModal: React.FC<DeviceSelectorModalProps> = ({
         </div>
         {speakers.length > 0 && (
           <div className="deviceSection">
-            <h3>Speaker</h3>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: "12px",
+              }}
+            >
+              <h3>Speaker</h3>
+              <button
+                className="button button-secondary"
+                onClick={playTestTone}
+                disabled={!selectedDevices.speakerId}
+              >
+                Test
+              </button>
+            </div>
             {renderDeviceList(speakers, "audiooutput")}
           </div>
         )}

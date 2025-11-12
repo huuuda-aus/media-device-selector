@@ -50,6 +50,7 @@ function Demo() {
         Select Devices
       </button>
 
+
       <DeviceSelectorModal
         isOpen={isOpen}
         onClose={() => setIsOpen(false)}
