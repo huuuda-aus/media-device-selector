@@ -20,9 +20,10 @@ Check out the [live demo](https://huuuda-aus.github.io/media-device-selector/) t
 - 🎨 Customizable modal interface
 - 🎣 Standalone `useMediaDevices` hook for custom UIs
 - 📱 Responsive design that works on all devices
-- 🔍 Real-time device permission handling
+- 🔍 Real-time device permission handling (camera permission excluded by default)
 - 🔄 Automatic device refresh when hardware changes
-- 🎯 TypeScript support with full type definitions
+- 🔊 Built-in speaker test with optional custom `testSound` (mp3/wav) and button auto-disable while playing
+- 🎯 TypeScript support with full type definitions included in the package
 - 🚫 Zero external UI dependencies
 - 🛡️ Type-safe with comprehensive error handling
 - 🌍 Environment detection and graceful degradation
@@ -43,33 +44,23 @@ pnpm add react-media-device-selector
 ## 🚀 Basic Usage
 
 ```tsx
-import {
-  DeviceSelectorModal,
-  useMediaDevices,
-} from "react-media-device-selector";
-import { useState, useRef } from "react";
+import { DeviceSelectorModal } from "react-media-device-selector";
+import { useRef, useState } from "react";
 
 function App() {
   const [isOpen, setIsOpen] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
 
-  const { devices, selectedDevices, updateSelectedDevices } = useMediaDevices();
-
-  const handleDeviceSelection = (selected: {
-    videoInput?: string | null;
-    audioInput?: string | null;
-    audioOutput?: string | null;
+  const handleSelectionComplete = (selection: {
+    cameraId: string | null;
+    microphoneId: string | null;
+    speakerId: string | null;
   }) => {
-    // Example: Start video stream with selected camera
-    if (videoRef.current && selected.videoInput) {
+    if (videoRef.current && selection.cameraId) {
       navigator.mediaDevices
-        .getUserMedia({
-          video: { deviceId: selected.videoInput },
-        })
+        .getUserMedia({ video: { deviceId: { exact: selection.cameraId } } })
         .then((stream) => {
-          if (videoRef.current) {
-            videoRef.current.srcObject = stream;
-          }
+          videoRef.current!.srcObject = stream;
         });
     }
   };
@@ -83,15 +74,11 @@ function App() {
         onClose={() => setIsOpen(false)}
         onSelectionComplete={handleSelectionComplete}
         targetMediaRef={videoRef}
-        showCameraPreview={true}
+        includeCamera={false}
+        showCameraPreview={false}
       />
 
-      <video
-        ref={videoRef}
-        autoPlay
-        playsInline
-        style={{ width: "100%", maxWidth: "640px" }}
-      />
+      <video ref={videoRef} autoPlay playsInline style={{ width: 400 }} />
     </div>
   );
 }
@@ -99,51 +86,47 @@ function App() {
 
 ## 🔧 API Reference
 
-### `DeviceSelectorModal` Props
+### DeviceSelectorModal props
 
-| Prop                  | Type                                 | Required | Default          | Description                                   |
-| --------------------- | ------------------------------------ | -------- | ---------------- | --------------------------------------------- |
-| `isOpen`              | `boolean`                            | ✅       | -                | Controls the visibility of the modal          |
-| `onClose`             | `() => void`                         | ✅       | -                | Callback when the modal is closed             |
-| `onSelectionComplete` | `(devices: SelectedDevices) => void` | ✅       | -                | Callback when device selection is confirmed   |
-| `targetMediaRef`      | `React.RefObject<HTMLVideoElement>`  | ❌       | -                | Reference to video element for camera preview |
-| `showCameraPreview`   | `boolean`                            | ❌       | `true`           | Show/hide camera preview section              |
-| `includeCamera`       | `boolean`                            | ❌       | `true`           | Include camera selection                      |
-| `includeMicrophone`   | `boolean`                            | ❌       | `true`           | Include microphone selection                  |
-| `includeSpeaker`      | `boolean`                            | ❌       | `true`           | Include speaker selection                     |
-| `title`               | `string`                             | ❌       | "Select Devices" | Modal title                                   |
-| `className`           | `string`                             | ❌       | -                | Additional CSS class for the modal            |
+- `isOpen: boolean` — controls visibility
+- `onClose?: () => void` — called when modal requests close
+- `onSelectionComplete: (selection: SelectedDevices) => void` — called on Confirm
+- `targetMediaRef?: React.RefObject<HTMLMediaElement>` — used to route speaker output via `setSinkId`
+- `showCameraPreview?: boolean` — default `true`
+- `includeCamera?: boolean` — default `false` (mic-only permission prompt by default)
+- `testSound?: string` — optional URL/module for custom speaker test audio
+- `className?: string`
+- `style?: React.CSSProperties`
 
-### `useMediaDevices` Hook
+### useMediaDevices hook
 
-```typescript
+```ts
 const {
-  // Device lists
-  devices: {
-    videoInputs: Device[],    // Available cameras
-    audioInputs: Device[],    // Available microphones
-    audioOutputs: Device[]    // Available speakers
-  },
-
-  // Currently selected devices
-  selectedDevices: {
-    videoInput?: string | null;  // Selected camera ID
-    audioInput?: string | null;  // Selected microphone ID
-    audioOutput?: string | null; // Selected speaker ID
-  },
-
-  // Methods
-  updateSelectedDevices: (devices: Partial<SelectedDevices>) => void;
-  requestPermission: () => Promise<PermissionStatus>;
-  refreshDevices: () => Promise<void>;
-
-  // Status
-  permissionStatus: 'granted' | 'denied' | 'prompt';
-  isLoading: boolean;
-  error: Error | null;
-
-} = useMediaDevices();
+  devices,                  // Flat list of devices
+  deviceLists,              // { microphones, cameras, speakers }
+  selectedDevices,          // { microphoneId, cameraId, speakerId }
+  setSelectedDevices,       // React state setter
+  selectDevice,             // (kind, deviceId) -> Promise<void>
+  activeStream,             // MediaStream | null (for preview)
+  permissionStatus,         // 'prompt' | 'granted' | 'denied' | 'not-supported'
+  isLoading,                // boolean
+  error,                    // Error | null
+  isMediaDevicesSupported,  // boolean
+} = useMediaDevices({ includeCamera?: boolean });
 ```
+
+## 🔊 Speaker test sound
+
+- Default behavior: built-in short tone sequence you can use to verify output.
+- Custom sound: pass `testSound` (URL or imported asset) to play your own file.
+  - With Vite or similar bundlers, you can import assets:
+    ```tsx
+    import testMp3 from "./assets/soundtest.mp3";
+
+    <DeviceSelectorModal testSound={testMp3} />
+    ```
+  - Or place your file in the public folder and reference `/soundtest.mp3`.
+- The Test button auto-disables while playing to prevent overlap.
 
 ## 🌟 Advanced Usage
 
