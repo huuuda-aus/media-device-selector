@@ -37,6 +37,7 @@ const DeviceSelectorModal: React.FC<DeviceSelectorModalProps> = ({
   const [, setAudioContext] = useState<AudioContext | null>(null);
   const [, setDataArray] = useState<Uint8Array | null>(null);
   const [volume, setVolume] = useState(0);
+  const [isTesting, setIsTesting] = useState(false);
   const [systemVolume, setSystemVolume] = useState(1);
   const animationFrameId = useRef<number>();
   const isOpen = isOpenProp ?? isOpenState;
@@ -550,6 +551,8 @@ const DeviceSelectorModal: React.FC<DeviceSelectorModalProps> = ({
 
   const playTestTone = useCallback(async () => {
     try {
+      if (isTesting) return;
+      setIsTesting(true);
       // If a custom test sound is provided, play it directly
       if (testSound) {
         const audioEl = new Audio(testSound);
@@ -562,7 +565,12 @@ const DeviceSelectorModal: React.FC<DeviceSelectorModalProps> = ({
             await (audioEl as any).setSinkId(selectedDevices.speakerId);
           } catch {}
         }
-        await audioEl.play();
+        audioEl.onended = () => setIsTesting(false);
+        try {
+          await audioEl.play();
+        } catch {
+          setIsTesting(false);
+        }
         return;
       }
 
@@ -637,9 +645,12 @@ const DeviceSelectorModal: React.FC<DeviceSelectorModalProps> = ({
           if (ctx.state !== "closed") await ctx.close();
           (audioEl as any).srcObject = null;
         } catch {}
+        setIsTesting(false);
       }, totalDurationMs + 10);
-    } catch {}
-  }, [selectedDevices.speakerId]);
+    } catch {
+      setIsTesting(false);
+    }
+  }, [selectedDevices.speakerId, testSound, isTesting]);
 
   const renderDeviceList = (
     devices: Array<{
@@ -813,8 +824,9 @@ const DeviceSelectorModal: React.FC<DeviceSelectorModalProps> = ({
               <h3>Speaker</h3>
               <button
                 className="button button-secondary"
+                style={{ marginBottom: "0.75rem", opacity: isTesting ? 0.5 : 1 }}
                 onClick={playTestTone}
-                disabled={!selectedDevices.speakerId}
+                disabled={!selectedDevices.speakerId || isTesting}
               >
                 Test
               </button>
