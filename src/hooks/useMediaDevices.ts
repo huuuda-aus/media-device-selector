@@ -27,7 +27,7 @@ interface UseMediaDevicesReturn {
 const useMediaDevices = (
   options: UseMediaDevicesOptions = {},
 ): UseMediaDevicesReturn => {
-  const { includeCamera = true } = options;
+  const { includeCamera = false } = options;
   const [permissionStatus, setPermissionStatus] =
     useState<PermissionStatus>("prompt");
   const [devices, setDevices] = useState<Device[]>([]);

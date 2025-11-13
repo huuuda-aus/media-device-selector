@@ -3,7 +3,7 @@ import { createRoot } from "react-dom/client";
 import DeviceSelectorModal from "../src/components/DeviceSelectorModal";
 
 // Control camera inclusion via state instead of a constant
-const DemoIncludeCameraDefault = true;
+const DemoIncludeCameraDefault = false;
 
 function Demo() {
   const [isOpen, setIsOpen] = React.useState(false);

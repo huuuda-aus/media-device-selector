@@ -12,6 +12,7 @@ interface DeviceSelectorModalProps {
   targetMediaRef?: React.RefObject<HTMLMediaElement>;
   showCameraPreview?: boolean;
   includeCamera: boolean;
+  testSound?: string;
   className?: string;
   style?: React.CSSProperties;
   isOpen?: boolean;
@@ -24,7 +25,8 @@ const DeviceSelectorModal: React.FC<DeviceSelectorModalProps> = ({
   renderButton,
   targetMediaRef,
   showCameraPreview = true,
-  includeCamera,
+  includeCamera = false,
+  testSound,
   className = "",
   style = {},
   isOpen: isOpenProp,
@@ -548,6 +550,22 @@ const DeviceSelectorModal: React.FC<DeviceSelectorModalProps> = ({
 
   const playTestTone = useCallback(async () => {
     try {
+      // If a custom test sound is provided, play it directly
+      if (testSound) {
+        const audioEl = new Audio(testSound);
+        audioEl.volume = 1;
+        if (
+          selectedDevices.speakerId &&
+          typeof (audioEl as any).setSinkId === "function"
+        ) {
+          try {
+            await (audioEl as any).setSinkId(selectedDevices.speakerId);
+          } catch {}
+        }
+        await audioEl.play();
+        return;
+      }
+
       const AudioContext =
         (window as any).AudioContext || (window as any).webkitAudioContext;
       const ctx = new AudioContext();
@@ -555,16 +573,25 @@ const DeviceSelectorModal: React.FC<DeviceSelectorModalProps> = ({
       const gain = ctx.createGain();
       const dest = ctx.createMediaStreamDestination();
 
+      // Short sequence: C4 - G4 - C5 (300ms each)
+      const notes = [
+        261.63, // C4
+        392.0,  // G4
+        523.25, // C5
+      ];
+
+      const noteDuration = 0.3; // 300ms per note
+      const attack = 0.01;
+      const release = 0.01;
+      const level = 0.3;
+
       osc.type = "sine";
-      osc.frequency.value = 880;
-      gain.gain.setValueAtTime(0.0001, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.2, ctx.currentTime + 0.02);
-      gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.35);
 
       osc.connect(gain);
       gain.connect(dest);
 
       const audioEl = new Audio();
+      audioEl.volume = 1;
       (audioEl as any).srcObject = dest.stream as any;
 
       if (
@@ -576,8 +603,32 @@ const DeviceSelectorModal: React.FC<DeviceSelectorModalProps> = ({
         } catch {}
       }
 
+      // Ensure AudioContext is running and element is playing before scheduling
+      if (ctx.state === "suspended") {
+        try {
+          await ctx.resume();
+        } catch {}
+      }
       await audioEl.play();
-      osc.start();
+
+      // Compute base time after playback to avoid scheduling in the past
+      const baseTime = ctx.currentTime + 0.03;
+      osc.start(baseTime);
+
+      // Schedule the sequence relative to baseTime
+      notes.forEach((freq, i) => {
+        const t0 = baseTime + i * noteDuration;
+        const t1 = t0 + attack;
+        const tEnd = t0 + noteDuration;
+
+        osc.frequency.setValueAtTime(freq, t0);
+        gain.gain.setValueAtTime(0.0001, Math.max(ctx.currentTime, t0));
+        gain.gain.linearRampToValueAtTime(level, t1);
+        gain.gain.setValueAtTime(level, Math.max(t1, tEnd - release));
+        gain.gain.linearRampToValueAtTime(0.0001, tEnd);
+      });
+
+      const totalDurationMs = notes.length * noteDuration * 1000;
       setTimeout(async () => {
         try {
           osc.stop();
@@ -586,7 +637,7 @@ const DeviceSelectorModal: React.FC<DeviceSelectorModalProps> = ({
           if (ctx.state !== "closed") await ctx.close();
           (audioEl as any).srcObject = null;
         } catch {}
-      }, 400);
+      }, totalDurationMs + 10);
     } catch {}
   }, [selectedDevices.speakerId]);
 

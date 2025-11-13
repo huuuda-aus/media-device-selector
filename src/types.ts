@@ -105,6 +105,11 @@ export interface DeviceSelectorModalProps {
   showCameraPreview?: boolean;
 
   /**
+   * Optional sound to play for the speaker test (e.g., imported mp3)
+   */
+  testSound?: string;
+
+  /**
    * Custom class name for the modal container
    */
   className?: string;
